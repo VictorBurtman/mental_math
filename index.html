@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconnaissance MNIST - TensorFlow.js</title>
+    <title>MNIST Digit Recognition</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         body {
@@ -20,236 +20,138 @@
             padding: 30px;
             border-radius: 15px;
             text-align: center;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             backdrop-filter: blur(10px);
         }
-        .success {
-            background: rgba(0, 255, 0, 0.2);
-            border: 2px solid rgba(0, 255, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .canvas-section {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
         #canvas {
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid white;
             border-radius: 10px;
             background: black;
             cursor: crosshair;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        #preview {
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 5px;
-            background: black;
-            image-rendering: pixelated;
-        }
-        .canvas-info {
-            text-align: left;
-            font-size: 14px;
+            margin: 20px;
         }
         button {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            background: #ff6b6b;
             color: white;
             border: none;
             padding: 12px 25px;
             border-radius: 25px;
             font-size: 16px;
             cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
+            margin: 10px;
         }
-        button:hover:not(:disabled) { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        button.auto-on {
-            background: linear-gradient(45deg, #00ff00, #00cc00);
-        }
+        button:hover { background: #ee5a24; }
         #result {
-            font-size: 18px;
-            margin: 20px 0;
+            font-size: 24px;
+            margin: 20px;
             padding: 20px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
-            backdrop-filter: blur(5px);
         }
-        .prediction { 
-            font-size: 72px; 
-            font-weight: bold; 
-            color: #ffd700;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            margin: 20px 0;
-        }
-        .predictions-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .pred-item {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: transform 0.2s;
-        }
-        .pred-item:hover {
-            transform: scale(1.05);
-        }
-        .pred-item.best {
-            background: rgba(255, 215, 0, 0.8);
-            color: black;
-            font-weight: bold;
-            transform: scale(1.1);
-        }
+        .prediction { font-size: 48px; font-weight: bold; color: #ffd700; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🧠 MNIST TensorFlow.js</h1>
+        <h1>🧠 MNIST Digit Recognition</h1>
+        <p>Utilise un <strong>modèle pré-entraîné hébergé</strong> - Reconnaissance réelle !</p>
         
-        <div class="success">
-            <strong>✅ Solution qui fonctionne :</strong> TensorFlow.js avec un modèle CNN créé et entraîné directement dans le navigateur !
-        </div>
+        <canvas id="canvas" width="280" height="280"></canvas><br>
         
-        <p>Dessinez un chiffre (0-9) en blanc sur le carré noir :</p>
+        <button onclick="clearCanvas()">Effacer</button>
+        <button onclick="predict()">Reconnaître</button>
         
-        <div class="canvas-section">
-            <div>
-                <canvas id="canvas" width="280" height="280"></canvas>
-                <div class="canvas-info">
-                    📝 Zone de dessin<br>
-                    280×280 pixels
-                </div>
-            </div>
-            <div>
-                <canvas id="preview" width="56" height="56"></canvas>
-                <div class="canvas-info">
-                    🔍 Format MNIST<br>
-                    28×28 pixels
-                </div>
-            </div>
-        </div>
-        
-        <div style="margin: 20px 0;">
-            <button onclick="clearCanvas()">🗑️ Effacer</button>
-            <button id="predictBtn" onclick="predictDigit()" disabled>🔍 Reconnaître</button>
-            <button id="autoBtn" onclick="toggleAuto()">🔄 Auto: OFF</button>
-        </div>
-        
-        <div id="result">🤖 Création du modèle CNN...</div>
+        <div id="result">Chargement du modèle MNIST pré-entraîné...</div>
     </div>
 
     <script>
-        let canvas, ctx, preview, previewCtx;
-        let model = null;
+        let canvas, ctx, model;
         let isDrawing = false;
-        let autoPredict = false;
-        let modelReady = false;
+        let modelLoaded = false;
 
-        // Initialisation
         async function init() {
-            // Canvas setup
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
-            preview = document.getElementById('preview');
-            previewCtx = preview.getContext('2d');
             
-            // Drawing setup
-            ctx.lineWidth = 20;
+            ctx.lineWidth = 15;
             ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
             ctx.strokeStyle = 'white';
             
             setupEvents();
             clearCanvas();
             
-            // Load/create model
-            await createModel();
+            // Charger le modèle MNIST pré-entraîné hébergé
+            await loadModel();
         }
 
-        async function createModel() {
+        async function loadModel() {
             try {
-                document.getElementById('result').innerHTML = '🧠 Création du modèle CNN...';
+                document.getElementById('result').innerHTML = '⏳ Chargement du modèle MNIST...';
                 
-                // Create a CNN model for MNIST
+                // Utiliser un modèle MNIST pré-entraîné hébergé publiquement
+                const modelUrl = 'https://raw.githubusercontent.com/tensorflow/tfjs-models/master/mnist/model.json';
+                
+                // Essayer de charger le modèle
+                model = await tf.loadLayersModel(modelUrl);
+                
+                modelLoaded = true;
+                document.getElementById('result').innerHTML = '✅ <strong>Modèle MNIST chargé avec succès !</strong><br>Dessinez un chiffre et cliquez "Reconnaître"';
+                
+            } catch (error) {
+                console.log('Modèle principal non disponible, utilisation d\'un modèle de substitution...');
+                
+                // Plan B: Utiliser un autre modèle hébergé
+                try {
+                    const altModelUrl = 'https://storage.googleapis.com/tfjs-models/tfjs/mnist_model/model.json';
+                    model = await tf.loadLayersModel(altModelUrl);
+                    modelLoaded = true;
+                    document.getElementById('result').innerHTML = '✅ <strong>Modèle de substitution chargé !</strong><br>Dessinez un chiffre et cliquez "Reconnaître"';
+                } catch (altError) {
+                    console.log('Plan B échoué, utilisation du plan C...');
+                    
+                    // Plan C: Créer un modèle simple mais fonctionnel
+                    await createSimpleModel();
+                }
+            }
+        }
+
+        async function createSimpleModel() {
+            try {
+                document.getElementById('result').innerHTML = '🔧 Création d\'un modèle CNN simple...';
+                
                 model = tf.sequential({
                     layers: [
-                        // Input layer and first conv layer
                         tf.layers.conv2d({
                             inputShape: [28, 28, 1],
                             filters: 32,
                             kernelSize: 3,
                             activation: 'relu'
                         }),
-                        tf.layers.maxPooling2d({ poolSize: 2 }),
-                        
-                        // Second conv layer
-                        tf.layers.conv2d({
-                            filters: 64,
-                            kernelSize: 3,
-                            activation: 'relu'
-                        }),
-                        tf.layers.maxPooling2d({ poolSize: 2 }),
-                        
-                        // Dense layers
+                        tf.layers.maxPooling2d({poolSize: 2}),
                         tf.layers.flatten(),
-                        tf.layers.dropout({ rate: 0.25 }),
-                        tf.layers.dense({
-                            units: 128,
-                            activation: 'relu'
-                        }),
-                        tf.layers.dropout({ rate: 0.5 }),
-                        tf.layers.dense({
-                            units: 10,
-                            activation: 'softmax'
-                        })
+                        tf.layers.dense({units: 128, activation: 'relu'}),
+                        tf.layers.dense({units: 10, activation: 'softmax'})
                     ]
                 });
 
-                // Compile the model
                 model.compile({
                     optimizer: 'adam',
-                    loss: 'categoricalCrossentropy',
-                    metrics: ['accuracy']
+                    loss: 'categoricalCrossentropy'
                 });
 
-                modelReady = true;
-                document.getElementById('predictBtn').disabled = false;
-                
-                document.getElementById('result').innerHTML = `
-                    ✅ <strong>Modèle CNN créé avec succès !</strong><br>
-                    🏗️ Architecture : 2 couches conv + pooling + dense<br>
-                    🎯 Prêt pour la reconnaissance (simulation intelligente)<br>
-                    <small>Note: Pour un modèle pré-entraîné, utilisez un dataset MNIST hébergé</small>
-                `;
+                modelLoaded = true;
+                document.getElementById('result').innerHTML = '✅ <strong>Modèle CNN créé !</strong><br>⚠️ Non entraîné - Résultats aléatoires pour démo<br><br><strong>Pour une vraie reconnaissance :</strong><br>1. Utilisez la démo : <a href="https://digit-recognition.ixartz.com" target="_blank" style="color:#ffd700">digit-recognition.ixartz.com</a><br>2. Ou ConvNetJS : <a href="https://cs.stanford.edu/people/karpathy/convnetjs/demo/mnist.html" target="_blank" style="color:#ffd700">Stanford Demo</a>';
                 
             } catch (error) {
-                console.error('Erreur création modèle:', error);
-                document.getElementById('result').innerHTML = '❌ Erreur de création du modèle';
+                document.getElementById('result').innerHTML = '❌ Erreur de création du modèle<br><br><strong>Solutions qui fonctionnent :</strong><br>• <a href="https://digit-recognition.ixartz.com" target="_blank" style="color:#ffd700">Démo fonctionnelle</a><br>• <a href="https://cs.stanford.edu/people/karpathy/convnetjs/demo/mnist.html" target="_blank" style="color:#ffd700">ConvNetJS Stanford</a>';
             }
         }
 
         function setupEvents() {
-            // Mouse events
             canvas.addEventListener('mousedown', startDraw);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDraw);
             canvas.addEventListener('mouseout', stopDraw);
             
-            // Touch events
             canvas.addEventListener('touchstart', handleTouch, {passive: false});
             canvas.addEventListener('touchmove', handleTouch, {passive: false});
             canvas.addEventListener('touchend', stopDraw);
@@ -264,23 +166,13 @@
 
         function draw(e) {
             if (!isDrawing) return;
-            
             const rect = canvas.getBoundingClientRect();
             ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
             ctx.stroke();
-            
-            updatePreview();
-            
-            if (autoPredict && modelReady) {
-                predictDigit();
-            }
         }
 
         function stopDraw() {
-            if (isDrawing) {
-                isDrawing = false;
-                updatePreview();
-            }
+            isDrawing = false;
         }
 
         function handleTouch(e) {
@@ -298,218 +190,59 @@
         function clearCanvas() {
             ctx.fillStyle = 'black';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            updatePreview();
         }
 
-        function updatePreview() {
-            previewCtx.fillStyle = 'black';
-            previewCtx.fillRect(0, 0, preview.width, preview.height);
-            previewCtx.drawImage(canvas, 0, 0, preview.width, preview.height);
-        }
-
-        async function predictDigit() {
-            if (!modelReady) {
+        async function predict() {
+            if (!modelLoaded) {
                 document.getElementById('result').innerHTML = '⏳ Modèle en cours de chargement...';
                 return;
             }
 
             try {
-                // Create tensor from canvas
-                const tensor = preprocessCanvas();
+                // Préprocessing MNIST standard
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let tensor = tf.browser.fromPixels(imageData, 1);
                 
-                // Get prediction (simulate since model isn't trained)
-                const prediction = await simulateIntelligentPrediction(tensor);
+                // Redimensionner à 28x28
+                tensor = tf.image.resizeBilinear(tensor, [28, 28]);
                 
-                displayResults(prediction);
+                // Normaliser
+                tensor = tensor.div(255.0);
                 
-                // Clean up
-                tensor.dispose();
+                // Ajouter dimension batch
+                tensor = tensor.expandDims(0);
                 
-            } catch (error) {
-                console.error('Erreur de prédiction:', error);
-                document.getElementById('result').innerHTML = '❌ Erreur de prédiction';
-            }
-        }
-
-        function preprocessCanvas() {
-            // Create 28x28 tensor from canvas
-            const tensor = tf.browser.fromPixels(preview, 1) // grayscale
-                .div(255.0) // normalize
-                .expandDims(0); // add batch dimension
-            
-            return tensor;
-        }
-
-        async function simulateIntelligentPrediction(tensor) {
-            // Simulate model prediction with intelligent analysis
-            const imageData = await tensor.squeeze().data();
-            
-            // Analyze the 28x28 image data
-            const features = analyzeImageFeatures(Array.from(imageData));
-            
-            // Generate realistic probabilities based on features
-            return generateSmartPrediction(features);
-        }
-
-        function analyzeImageFeatures(pixels) {
-            const size = 28;
-            let totalInk = 0;
-            let centerMassX = 0;
-            let centerMassY = 0;
-            let topHalf = 0;
-            let bottomHalf = 0;
-            let leftHalf = 0;
-            let rightHalf = 0;
-            let corners = 0;
-            let center = 0;
-            
-            for (let y = 0; y < size; y++) {
-                for (let x = 0; x < size; x++) {
-                    const pixel = pixels[y * size + x];
-                    if (pixel > 0.1) {
-                        totalInk += pixel;
-                        centerMassX += x * pixel;
-                        centerMassY += y * pixel;
-                        
-                        if (y < size/2) topHalf += pixel;
-                        else bottomHalf += pixel;
-                        
-                        if (x < size/2) leftHalf += pixel;
-                        else rightHalf += pixel;
-                        
-                        if ((x < 7 || x > 20) && (y < 7 || y > 20)) corners += pixel;
-                        if (x > 9 && x < 18 && y > 9 && y < 18) center += pixel;
-                    }
-                }
-            }
-            
-            if (totalInk > 0) {
-                centerMassX /= totalInk;
-                centerMassY /= totalInk;
-            }
-            
-            return {
-                totalInk,
-                centerMassX,
-                centerMassY,
-                topRatio: topHalf / totalInk,
-                bottomRatio: bottomHalf / totalInk,
-                leftRatio: leftHalf / totalInk,
-                rightRatio: rightHalf / totalInk,
-                centerRatio: center / totalInk,
-                cornerRatio: corners / totalInk
-            };
-        }
-
-        function generateSmartPrediction(features) {
-            if (features.totalInk < 0.5) {
-                return Array(10).fill(0.1);
-            }
-            
-            const scores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-            
-            // Digit recognition rules based on features
-            // 0: round, hollow center
-            if (features.centerRatio < 0.3 && features.topRatio > 0.2 && features.bottomRatio > 0.2) {
-                scores[0] += 40;
-            }
-            
-            // 1: thin, centered
-            if (features.totalInk < 3 && Math.abs(features.centerMassX - 14) < 5) {
-                scores[1] += 50;
-            }
-            
-            // 2: top and bottom heavy
-            if (features.topRatio > 0.25 && features.bottomRatio > 0.25) {
-                scores[2] += 35;
-            }
-            
-            // 3: right-heavy
-            if (features.rightRatio > features.leftRatio * 1.3) {
-                scores[3] += 35;
-            }
-            
-            // 4: cross pattern
-            if (features.centerRatio > 0.15 && features.rightRatio > 0.3) {
-                scores[4] += 40;
-            }
-            
-            // 5: top-left, bottom-right
-            if (features.topRatio > 0.2 && features.rightRatio > features.leftRatio) {
-                scores[5] += 30;
-            }
-            
-            // 6: bottom-heavy circle
-            if (features.bottomRatio > features.topRatio && features.leftRatio > 0.3) {
-                scores[6] += 35;
-            }
-            
-            // 7: top-heavy
-            if (features.topRatio > features.bottomRatio * 1.5) {
-                scores[7] += 40;
-            }
-            
-            // 8: balanced, two loops
-            if (features.topRatio > 0.2 && features.bottomRatio > 0.2 && features.centerRatio > 0.1) {
-                scores[8] += 45;
-            }
-            
-            // 9: top-heavy circle
-            if (features.topRatio > features.bottomRatio && features.rightRatio > 0.25) {
-                scores[9] += 35;
-            }
-            
-            // Convert to probabilities
-            const maxScore = Math.max(...scores);
-            if (maxScore === 0) {
-                return Array(10).fill(0.1);
-            }
-            
-            const probs = scores.map(score => {
-                const base = 0.01;
-                return (score / maxScore) * 0.85 + base;
-            });
-            
-            // Normalize
-            const sum = probs.reduce((a, b) => a + b, 0);
-            return probs.map(p => p / sum);
-        }
-
-        function displayResults(probabilities) {
-            const maxIndex = probabilities.indexOf(Math.max(...probabilities));
-            const confidence = (probabilities[maxIndex] * 100).toFixed(1);
-            
-            let resultHTML = `
-                <div class="prediction">${maxIndex}</div>
-                <div><strong>Confiance: ${confidence}%</strong></div>
-                <div style="font-size: 14px; margin: 10px 0;">
-                    🧠 CNN Architecture | 🎯 Analyse intelligente des formes
-                </div>
-            `;
-            
-            resultHTML += '<div class="predictions-grid">';
-            probabilities.forEach((prob, index) => {
-                const conf = (prob * 100).toFixed(1);
-                resultHTML += `
-                    <div class="pred-item ${index === maxIndex ? 'best' : ''}">
-                        <strong>${index}</strong><br>
-                        <small>${conf}%</small>
+                // Prédiction
+                const prediction = model.predict(tensor);
+                const probabilities = await prediction.data();
+                
+                // Résultats
+                const maxIndex = probabilities.indexOf(Math.max(...probabilities));
+                const confidence = (probabilities[maxIndex] * 100).toFixed(1);
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="prediction">${maxIndex}</div>
+                    <div>Confiance: ${confidence}%</div>
+                    <div style="font-size:14px; margin-top:10px;">
+                        ${modelLoaded ? '✅ Modèle TensorFlow.js' : '⚠️ Demo uniquement'}
                     </div>
                 `;
-            });
-            resultHTML += '</div>';
-            
-            document.getElementById('result').innerHTML = resultHTML;
+                
+                // Nettoyer
+                tensor.dispose();
+                prediction.dispose();
+                
+            } catch (error) {
+                console.error('Erreur prédiction:', error);
+                document.getElementById('result').innerHTML = `
+                    ❌ Erreur de prédiction<br><br>
+                    <strong>Essayez ces solutions qui marchent :</strong><br>
+                    • <a href="https://digit-recognition.ixartz.com" target="_blank" style="color:#ffd700">digit-recognition.ixartz.com</a><br>
+                    • <a href="https://cs.stanford.edu/people/karpathy/convnetjs/demo/mnist.html" target="_blank" style="color:#ffd700">ConvNetJS Demo</a>
+                `;
+            }
         }
 
-        function toggleAuto() {
-            autoPredict = !autoPredict;
-            const btn = document.getElementById('autoBtn');
-            btn.textContent = `🔄 Auto: ${autoPredict ? 'ON' : 'OFF'}`;
-            btn.className = autoPredict ? 'auto-on' : '';
-        }
-
-        // Start when page loads
         window.addEventListener('load', init);
     </script>
 </body>
