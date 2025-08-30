@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconnaissance de Chiffres MNIST</title>
+    <title>Reconnaissance de Chiffres - DoodleNet</title>
     <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
     <style>
         body {
@@ -21,11 +21,20 @@
             border-radius: 15px;
             text-align: center;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .tech-note {
+            background: rgba(255, 165, 0, 0.2);
+            border: 2px solid rgba(255, 165, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
         }
         #canvas {
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
-            background: black;
+            background: white;
             cursor: crosshair;
             margin: 20px 0;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -41,9 +50,13 @@
             margin: 0 10px;
             transition: all 0.3s ease;
         }
-        button:hover { 
+        button:hover:not(:disabled) { 
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
         }
         #result {
             font-size: 18px;
@@ -51,27 +64,86 @@
             padding: 20px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
+            backdrop-filter: blur(5px);
         }
         .prediction { 
             font-size: 48px; 
             font-weight: bold; 
             color: #ffd700;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 15px 0;
+        }
+        .predictions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .prediction-item {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .prediction-item.best {
+            background: rgba(255, 215, 0, 0.6);
+            font-weight: bold;
+            color: black;
+        }
+        .alternative {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔢 Reconnaissance MNIST Réelle</h1>
-        <p>✨ Modèle IA entraîné sur 70,000 chiffres manuscrits</p>
-        <p>Dessinez un chiffre (0-9) en blanc sur le carré noir :</p>
+        <h1>🎨 Reconnaissance de Dessins</h1>
+        
+        <div class="tech-note">
+            <strong>📝 Note :</strong> ml5.js n'a pas de modèle MNIST intégré. Cette version utilise <strong>DoodleNet</strong> qui reconnaît des dessins, y compris les chiffres !
+        </div>
+        
+        <p>Dessinez quelque chose dans le carré blanc ci-dessous :</p>
         
         <canvas id="canvas" width="280" height="280"></canvas><br>
         
         <button onclick="clearCanvas()">🗑️ Effacer</button>
-        <button onclick="classifyCanvas()">🔍 Reconnaître</button>
+        <button id="classifyBtn" onclick="classifyCanvas()" disabled>🔍 Reconnaître</button>
         
-        <div id="result">📡 Chargement du modèle IA...</div>
+        <div id="result">📡 Chargement du modèle DoodleNet...</div>
+        
+        <div class="alternative">
+            <h3>🚀 Pour une vraie reconnaissance de chiffres MNIST :</h3>
+            <p><strong>Option 1 :</strong> Remplace dans ton code GitHub :</p>
+            <div style="background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; text-align: left; margin: 10px 0;">
+// Remplace cette ligne :<br>
+classifier = ml5.imageClassifier('MNIST', canvas, callback);<br><br>
+// Par :<br>
+classifier = ml5.imageClassifier('DoodleNet', canvas, callback);
+            </div>
+            
+            <p><strong>Option 2 :</strong> Utilise un modèle TensorFlow.js hébergé</p>
+            <div style="background: #1a1a1a; color: #00ff00; padding: 10px; border-radius: 5px; font-family: monospace; text-align: left; margin: 10px 0;">
+// Charge un vrai modèle MNIST :<br>
+const model = await tf.loadLayersModel(<br>
+&nbsp;&nbsp;'https://raw.githubusercontent.com/ml5js/ml5-data-and-models/main/models/MNIST/model.json'<br>
+);
+            </div>
+            
+            <p><strong>Option 3 :</strong> Teachable Machine Google (recommandé)</p>
+            <ol style="text-align: left;">
+                <li>Va sur <strong>teachablemachine.withgoogle.com</strong></li>
+                <li>Crée un projet "Image"</li>
+                <li>Ajoute des exemples de chiffres 0-9</li>
+                <li>Entraîne le modèle</li>
+                <li>Exporte vers "TensorFlow.js"</li>
+                <li>Utilise l'URL générée dans ton code</li>
+            </ol>
+        </div>
     </div>
 
     <script>
@@ -83,20 +155,24 @@
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
             
-            ctx.lineWidth = 20;
+            // Configuration pour dessiner
+            ctx.lineWidth = 8;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = 'white';
+            ctx.strokeStyle = 'black';
             
-            // Charger le modèle ml5.js MNIST
-            classifier = ml5.imageClassifier('MNIST', canvas, () => {
-                modelReady = true;
-                document.getElementById('result').innerHTML = 
-                    '✅ <strong>Modèle IA chargé !</strong><br>🎯 Précision : 99%+ sur les chiffres manuscrits<br>Dessinez et cliquez "Reconnaître"';
-            });
+            // Charger DoodleNet (qui peut reconnaître quelques chiffres)
+            classifier = ml5.imageClassifier('DoodleNet', canvas, modelLoaded);
             
             setupEvents();
             clearCanvas();
+        }
+
+        function modelLoaded() {
+            modelReady = true;
+            document.getElementById('classifyBtn').disabled = false;
+            document.getElementById('result').innerHTML = 
+                '✅ <strong>Modèle DoodleNet chargé !</strong><br>🎨 Reconnaît 345 catégories de dessins<br>Dessinez quelque chose et cliquez "Reconnaître"';
         }
 
         function setupEvents() {
@@ -142,29 +218,66 @@
         }
 
         function clearCanvas() {
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
         function classifyCanvas() {
             if (!modelReady) {
                 document.getElementById('result').innerHTML = 
-                    '⏳ <strong>Chargement du modèle...</strong>';
+                    '⏳ <strong>Modèle en cours de chargement...</strong>';
                 return;
             }
             
-            classifier.classify(canvas, (results) => {
-                const pred = results[0];
-                const conf = (pred.confidence * 100).toFixed(1);
+            // DoodleNet classification
+            classifier.classify(canvas, (error, results) => {
+                if (error) {
+                    console.error(error);
+                    document.getElementById('result').innerHTML = 
+                        '❌ <strong>Erreur de classification</strong>';
+                    return;
+                }
                 
-                document.getElementById('result').innerHTML = `
-                    <div class="prediction">${pred.label}</div>
-                    <div><strong>Confiance: ${conf}%</strong></div>
-                    <div style="font-size:14px; margin-top:10px;">
-                        🧠 Réseau de neurones convolutionnels<br>
-                        📊 Entraîné sur dataset MNIST officiel
-                    </div>
+                const topResult = results[0];
+                const confidence = (topResult.confidence * 100).toFixed(1);
+                
+                // Chercher des chiffres dans les résultats
+                const digitResults = results.filter(r => 
+                    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(r.label) ||
+                    r.label.includes('number') || 
+                    r.label.includes('digit')
+                );
+                
+                let resultHTML = `
+                    <div class="prediction">${topResult.label}</div>
+                    <div><strong>Confiance: ${confidence}%</strong></div>
                 `;
+                
+                if (digitResults.length > 0) {
+                    resultHTML += `
+                        <div style="margin-top: 15px; color: #90EE90;">
+                            <strong>🔢 Chiffres détectés :</strong><br>
+                            ${digitResults.map(r => 
+                                `${r.label}: ${(r.confidence * 100).toFixed(1)}%`
+                            ).join('<br>')}
+                        </div>
+                    `;
+                }
+                
+                // Afficher le top 5 des résultats
+                resultHTML += '<div class="predictions-list">';
+                results.slice(0, 5).forEach((result, index) => {
+                    const conf = (result.confidence * 100).toFixed(1);
+                    resultHTML += `
+                        <div class="prediction-item ${index === 0 ? 'best' : ''}">
+                            ${result.label}<br>
+                            <small>${conf}%</small>
+                        </div>
+                    `;
+                });
+                resultHTML += '</div>';
+                
+                document.getElementById('result').innerHTML = resultHTML;
             });
         }
 
