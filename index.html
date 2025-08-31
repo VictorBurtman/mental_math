@@ -1,237 +1,229 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reconnaissance de chiffres manuscrits</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        #canvas {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 10px;
-            background: white;
-            cursor: crosshair;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        button {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s ease;
-        }
-        button:hover:not(:disabled) { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        .predict-btn {
-            background: linear-gradient(45deg, #ffd700, #ff8c00);
-            color: black;
-            font-weight: bold;
-        }
-        #result {
-            font-size: 18px;
-            margin: 20px 0;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            backdrop-filter: blur(5px);
-        }
-        .prediction { 
-            font-size: 72px; 
-            font-weight: bold; 
-            color: #ffd700;
-            text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
-            margin: 20px 0;
-        }
-        .confidence {
-            font-size: 24px;
-            font-weight: bold;
-            color: #90EE90;
-            margin: 15px 0;
-        }
-        .predictions-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .pred-item {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: transform 0.2s;
-        }
-        .pred-item:hover {
-            transform: scale(1.05);
-        }
-        .pred-item.best {
-            background: rgba(255, 215, 0, 0.9);
-            color: black;
-            font-weight: bold;
-            transform: scale(1.15);
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reconnaissance de chiffres manuscrits</title>
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: white;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    #canvas {
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      background: white;
+      cursor: crosshair;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    button {
+      background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+    }
+    button:hover:not(:disabled) { 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .predict-btn {
+      background: linear-gradient(45deg, #ffd700, #ff8c00);
+      color: black;
+      font-weight: bold;
+    }
+    #result {
+      font-size: 18px;
+      margin: 20px 0;
+      padding: 20px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+    }
+    .prediction { 
+      font-size: 72px; 
+      font-weight: bold; 
+      color: #ffd700;
+      text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+      margin: 20px 0;
+    }
+    .confidence {
+      font-size: 24px;
+      font-weight: bold;
+      color: #90EE90;
+      margin: 15px 0;
+    }
+    .predictions-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .pred-item {
+      background: rgba(255,255,255,0.3);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: transform 0.2s;
+    }
+    .pred-item.best {
+      background: rgba(255,215,0,0.9);
+      color: black;
+      font-weight: bold;
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(255,215,0,0.4);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧠 Reconnaissance de chiffres manuscrits</h1>
-        <p>Écrivez un chiffre dans la zone ci-dessous et cliquez sur <b>Reconnaître</b>.</p>
+  <div class="container">
+    <h1>🧠 Reconnaissance de chiffres manuscrits</h1>
+    <p>Écrivez un chiffre dans la zone ci-dessous puis cliquez sur <b>Reconnaître</b>.</p>
 
-        <canvas id="canvas" width="280" height="280"></canvas>
-        <div style="margin-top: 10px;">
-            <button onclick="clearCanvas()">🗑️ Effacer</button>
-            <button class="predict-btn" onclick="predict()" id="predictBtn" disabled>
-                🔍 Reconnaître
-            </button>
-        </div>
-
-        <div id="result">📦 Chargement du modèle...</div>
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <div style="margin-top:10px;">
+      <button onclick="clearCanvas()">🗑️ Effacer</button>
+      <button id="predictBtn" class="predict-btn" onclick="predict()" disabled>🔍 Reconnaître</button>
     </div>
 
-    <script>
-        let canvas, ctx, model;
-        let isDrawing = false;
-        let modelReady = false;
+    <div id="result">📦 Chargement du modèle…</div>
+  </div>
 
-        async function init() {
-            // Initialiser canvas
-            canvas = document.getElementById('canvas');
-            ctx = canvas.getContext('2d');
-            ctx.lineWidth = 20;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = 'black';
-            setupDrawingEvents();
-            clearCanvas();
+  <script>
+    // --- Variables globales (dont le modèle) ---
+    let canvas, ctx, isDrawing = false;
+    let model = null;   // 👈 IMPORTANT : déclaration ici
 
-            // Charger modèle pré-entraîné
-            try {
-                model = await tf.loadLayersModel(
-                  "https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json"
-                );
-                modelReady = true;
-                document.getElementById('result').innerHTML = "✅ Modèle pré-entraîné chargé !";
-                document.getElementById('predictBtn').disabled = false;
-            } catch (err) {
-                document.getElementById('result').innerHTML = "❌ Erreur de chargement : " + err;
-            }
-        }
+    // --- Initialisation ---
+    window.addEventListener('load', init);
 
-        async function predict() {
-            if (!modelReady) {
-                alert("Le modèle n'est pas encore chargé !");
-                return;
-            }
+    async function init() {
+      // Canvas
+      canvas = document.getElementById('canvas');
+      ctx = canvas.getContext('2d');
+      ctx.lineWidth = 20;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'black';
+      setupDrawingEvents();
+      clearCanvas();
 
-            let tensor = tf.browser.fromPixels(canvas, 1);
-            tensor = tf.image.resizeBilinear(tensor, [28, 28]);
-            tensor = tensor.div(255.0);
-            tensor = tf.sub(1.0, tensor); // inverser (MNIST est blanc sur noir)
-            tensor = tensor.expandDims(0);
+      // Charger le modèle MNIST pré-entraîné
+      // (hébergé publiquement et compatible TFJS)
+      const status = document.getElementById('result');
+      try {
+        status.textContent = '📦 Chargement du modèle…';
+        model = await tf.loadLayersModel(
+          'https://storage.googleapis.com/learnjs-data/model-builder/mnist/model.json'
+        );
+        document.getElementById('predictBtn').disabled = false;
+        status.textContent = '✅ Modèle pré-entraîné chargé !';
+      } catch (err) {
+        status.textContent = '❌ Erreur de chargement du modèle : ' + err;
+      }
+    }
 
-            const prediction = model.predict(tensor);
-            const probabilities = await prediction.data();
+    // --- Dessin ---
+    function setupDrawingEvents() {
+      canvas.addEventListener('mousedown', startDraw);
+      canvas.addEventListener('mousemove', draw);
+      canvas.addEventListener('mouseup', stopDraw);
+      canvas.addEventListener('mouseout', stopDraw);
 
-            const maxIndex = probabilities.indexOf(Math.max(...probabilities));
-            const confidence = (probabilities[maxIndex] * 100).toFixed(1);
+      canvas.addEventListener('touchstart', handleTouch, {passive:false});
+      canvas.addEventListener('touchmove', handleTouch, {passive:false});
+      canvas.addEventListener('touchend', stopDraw);
+    }
+    function startDraw(e) {
+      isDrawing = true;
+      const r = canvas.getBoundingClientRect();
+      ctx.beginPath();
+      ctx.moveTo((e.clientX ?? e.touches[0].clientX) - r.left,
+                 (e.clientY ?? e.touches[0].clientY) - r.top);
+    }
+    function draw(e) {
+      if (!isDrawing) return;
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX ?? e.touches?.[0]?.clientX) - r.left;
+      const y = (e.clientY ?? e.touches?.[0]?.clientY) - r.top;
+      ctx.lineTo(x, y);
+      ctx.stroke();
+    }
+    function stopDraw() { isDrawing = false; }
+    function handleTouch(e) {
+      e.preventDefault();
+      if (e.type === 'touchstart') startDraw(e);
+      else if (e.type === 'touchmove') draw(e);
+      else stopDraw();
+    }
+    function clearCanvas() {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-            let resultHTML = `
-                <div class="prediction">${maxIndex}</div>
-                <div class="confidence">Confiance: ${confidence}%</div>
-            `;
+    // --- Prétraitement & Prédiction ---
+    async function predict() {
+      if (!model) {
+        alert("Le modèle n'est pas encore chargé.");
+        return;
+      }
 
-            resultHTML += '<div class="predictions-grid">';
-            probabilities.forEach((prob, index) => {
-                const conf = (prob * 100).toFixed(1);
-                resultHTML += `
-                    <div class="pred-item ${index === maxIndex ? 'best' : ''}">
-                        <strong>${index}</strong><br>
-                        <small>${conf}%</small>
-                    </div>
-                `;
-            });
-            resultHTML += '</div>';
+      // 1) Lire l'image du canvas en niveau de gris
+      let tensor = tf.tidy(() => {
+        let t = tf.browser.fromPixels(canvas, 1);       // [280, 280, 1]
+        t = tf.image.resizeBilinear(t, [28, 28]);       // [28, 28, 1]
+        t = t.div(255);                                 // [0,1]
+        t = tf.sub(1, t);                               // inverser (MNIST = blanc sur noir)
+        return t.expandDims(0);                         // [1, 28, 28, 1]
+      });
 
-            document.getElementById('result').innerHTML = resultHTML;
+      // 2) Prédire
+      const logits = model.predict(tensor);
+      const probs = await logits.data();
+      logits.dispose();
+      tensor.dispose();
 
-            tensor.dispose();
-            prediction.dispose();
-        }
+      // 3) Trouver le meilleur score
+      const bestIdx = probs.indexOf(Math.max(...probs));
+      const confidence = (probs[bestIdx] * 100).toFixed(1);
 
-        function setupDrawingEvents() {
-            canvas.addEventListener('mousedown', startDraw);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDraw);
-            canvas.addEventListener('mouseout', stopDraw);
-
-            canvas.addEventListener('touchstart', handleTouch, {passive: false});
-            canvas.addEventListener('touchmove', handleTouch, {passive: false});
-            canvas.addEventListener('touchend', stopDraw);
-        }
-
-        function startDraw(e) {
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            ctx.beginPath();
-            ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-        }
-
-        function draw(e) {
-            if (!isDrawing) return;
-            const rect = canvas.getBoundingClientRect();
-            ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-            ctx.stroke();
-        }
-
-        function stopDraw() {
-            isDrawing = false;
-        }
-
-        function handleTouch(e) {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent(
-                e.type === 'touchstart' ? 'mousedown' : 
-                e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            canvas.dispatchEvent(mouseEvent);
-        }
-
-        function clearCanvas() {
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        window.addEventListener('load', init);
-    </script>
+      // 4) Affichage
+      let html = `
+        <div class="prediction">${bestIdx}</div>
+        <div class="confidence">Confiance : ${confidence}%</div>
+        <div class="predictions-grid">
+      `;
+      for (let i = 0; i < 10; i++) {
+        const conf = (probs[i] * 100).toFixed(1);
+        html += `
+          <div class="pred-item ${i === bestIdx ? 'best' : ''}">
+            <strong>${i}</strong><br/>
+            <small>${conf}%</small>
+          </div>
+        `;
+      }
+      html += '</div>';
+      document.getElementById('result').innerHTML = html;
+    }
+  </script>
 </body>
 </html>
