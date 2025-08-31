@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNIST - Version qui fonctionne !</title>
-    <!-- Bibliothèque MNIST de cazala - ÉPROUVÉE -->
-    <script src="https://unpkg.com/mnist@1.1.0/dist/mnist.js"></script>
-    <!-- TensorFlow.js -->
+    <title>Reconnaissance de chiffres manuscrits</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <style>
         body {
@@ -26,59 +23,12 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
-        .success-banner {
-            background: rgba(0, 255, 0, 0.2);
-            border: 2px solid rgba(0, 255, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        .quick-train {
-            background: rgba(255, 165, 0, 0.2);
-            border: 2px solid rgba(255, 165, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        .canvas-section {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            gap: 30px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .draw-area {
-            text-align: center;
-        }
         #canvas {
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 10px;
             background: white;
             cursor: crosshair;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        .examples-area {
-            text-align: center;
-        }
-        .examples-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin: 15px 0;
-        }
-        .example-canvas {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 5px;
-            background: black;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .example-canvas:hover {
-            border-color: #ffd700;
-            transform: scale(1.1);
-            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
         button {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
@@ -88,7 +38,7 @@
             border-radius: 25px;
             font-size: 16px;
             cursor: pointer;
-            margin: 0 10px 10px 0;
+            margin: 10px;
             transition: all 0.3s ease;
         }
         button:hover:not(:disabled) { 
@@ -98,11 +48,6 @@
         button:disabled {
             background: #666;
             cursor: not-allowed;
-        }
-        .train-btn {
-            background: linear-gradient(45deg, #00ff00, #00cc00);
-            font-size: 18px;
-            padding: 15px 30px;
         }
         .predict-btn {
             background: linear-gradient(45deg, #ffd700, #ff8c00);
@@ -153,344 +98,91 @@
             transform: scale(1.15);
             box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
         }
-        .training-status {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
-            font-family: monospace;
-        }
-        .progress-bar {
-            background: rgba(255, 255, 255, 0.2);
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        .progress-fill {
-            background: linear-gradient(90deg, #00ff00, #ffd700);
-            height: 100%;
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 10px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🧠 MNIST - La version qui MARCHE !</h1>
-        
-        <div class="success-banner">
-            ✅ Utilise la bibliothèque cazala/mnist (10,000 échantillons réels) + entraînement rapide
-        </div>
-        
-        <div class="quick-train">
-            <h3>🚀 Entraînement Rapide</h3>
-            <p>Cliquez sur "Entraîner" - ça prend 30 secondes et ça marche vraiment !</p>
-            <button class="train-btn" onclick="quickTrain()" id="trainBtn">
-                🎯 Entraîner le modèle (30 sec)
+        <h1>🧠 Reconnaissance de chiffres manuscrits</h1>
+        <p>Écrivez un chiffre dans la zone ci-dessous et cliquez sur <b>Reconnaître</b>.</p>
+
+        <canvas id="canvas" width="280" height="280"></canvas>
+        <div style="margin-top: 10px;">
+            <button onclick="clearCanvas()">🗑️ Effacer</button>
+            <button class="predict-btn" onclick="predict()" id="predictBtn" disabled>
+                🔍 Reconnaître
             </button>
-            <div id="trainingStatus"></div>
         </div>
-        
-        <div class="canvas-section">
-            <div class="draw-area">
-                <h3>🖊️ Zone de dessin</h3>
-                <canvas id="canvas" width="280" height="280"></canvas>
-                <div style="margin-top: 10px;">
-                    <button onclick="clearCanvas()">🗑️ Effacer</button>
-                    <button class="predict-btn" onclick="predict()" id="predictBtn" disabled>
-                        🔍 Reconnaître
-                    </button>
-                </div>
-            </div>
-            
-            <div class="examples-area">
-                <h3>📚 Exemples MNIST</h3>
-                <p style="font-size: 14px;">Cliquez pour copier un exemple :</p>
-                <div class="examples-grid" id="examplesGrid"></div>
-                <button onclick="loadExamples()">🔄 Nouveaux exemples</button>
-            </div>
-        </div>
-        
-        <div id="result">
-            📦 <strong>Chargement de la bibliothèque MNIST...</strong><br>
-            <small>Vérification des 10,000 échantillons...</small>
-        </div>
+
+        <div id="result">📦 Chargement du modèle...</div>
     </div>
 
     <script>
-        let canvas, ctx, model, mnistLoaded = false;
+        let canvas, ctx, model;
         let isDrawing = false;
-        let modelTrained = false;
+        let modelReady = false;
 
         async function init() {
+            // Initialiser canvas
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'black';
+            setupDrawingEvents();
+            clearCanvas();
+
+            // Charger modèle pré-entraîné
             try {
-                // Initialiser le canvas
-                canvas = document.getElementById('canvas');
-                ctx = canvas.getContext('2d');
-                ctx.lineWidth = 20;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = 'black';
-                
-                setupDrawingEvents();
-                clearCanvas();
-                
-                // Vérifier MNIST
-                await waitForMNIST();
-                
-            } catch (error) {
-                console.error('Erreur init:', error);
-                document.getElementById('result').innerHTML = `
-                    ❌ <strong>Erreur d'initialisation</strong><br>
-                    ${error.message}
-                `;
-            }
-        }
-
-        async function waitForMNIST() {
-            let attempts = 0;
-            const maxAttempts = 50; // 5 secondes max
-            
-            const checkMNIST = () => {
-                if (typeof mnist !== 'undefined') {
-                    mnistLoaded = true;
-                    document.getElementById('result').innerHTML = `
-                        ✅ <strong>Bibliothèque MNIST chargée !</strong><br>
-                        📊 10,000 échantillons de chiffres manuscrits disponibles<br>
-                        🎯 Prêt pour l'entraînement !
-                    `;
-                    loadExamples();
-                    return;
-                }
-                
-                attempts++;
-                if (attempts < maxAttempts) {
-                    setTimeout(checkMNIST, 100);
-                } else {
-                    throw new Error('Impossible de charger la bibliothèque MNIST');
-                }
-            };
-            
-            checkMNIST();
-        }
-
-        function loadExamples() {
-            if (!mnistLoaded) return;
-            
-            try {
-                const grid = document.getElementById('examplesGrid');
-                grid.innerHTML = '';
-                
-                // Charger 10 exemples (un par chiffre)
-                for (let digit = 0; digit <= 9; digit++) {
-                    const example = mnist[digit].get();
-                    
-                    const exampleCanvas = document.createElement('canvas');
-                    exampleCanvas.width = 56;
-                    exampleCanvas.height = 56;
-                    exampleCanvas.className = 'example-canvas';
-                    exampleCanvas.title = `Chiffre ${digit}`;
-                    
-                    const exampleCtx = exampleCanvas.getContext('2d');
-                    mnist.draw(example, exampleCtx);
-                    
-                    exampleCanvas.onclick = () => copyExample(example);
-                    grid.appendChild(exampleCanvas);
-                }
-                
-            } catch (error) {
-                console.error('Erreur exemples:', error);
-            }
-        }
-
-        function copyExample(mnistData) {
-            // Effacer le canvas
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Convertir les données MNIST en image
-            const imageData = ctx.createImageData(28, 28);
-            
-            for (let i = 0; i < mnistData.length; i++) {
-                const pixelValue = Math.floor(mnistData[i] * 255);
-                const pixelIndex = i * 4;
-                imageData.data[pixelIndex] = pixelValue;
-                imageData.data[pixelIndex + 1] = pixelValue;
-                imageData.data[pixelIndex + 2] = pixelValue;
-                imageData.data[pixelIndex + 3] = 255;
-            }
-            
-            // Canvas temporaire pour redimensionner
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = 28;
-            tempCanvas.height = 28;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.putImageData(imageData, 0, 0);
-            
-            // Dessiner agrandi sur le canvas principal
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
-        }
-
-        async function quickTrain() {
-            if (!mnistLoaded) {
-                alert('MNIST pas encore chargé !');
-                return;
-            }
-            
-            try {
-                document.getElementById('trainBtn').disabled = true;
-                document.getElementById('trainingStatus').innerHTML = `
-                    <div class="training-status">
-                        🚀 <strong>Entraînement rapide en cours...</strong><br>
-                        📊 Préparation des données MNIST...
-                    </div>
-                `;
-                
-                // Créer un modèle optimisé pour un entraînement rapide
-                model = tf.sequential({
-                    layers: [
-                        tf.layers.dense({
-                            inputShape: [784],
-                            units: 64, // Moins de neurones = plus rapide
-                            activation: 'relu'
-                        }),
-                        tf.layers.dropout({rate: 0.2}),
-                        tf.layers.dense({
-                            units: 32,
-                            activation: 'relu'
-                        }),
-                        tf.layers.dense({
-                            units: 10,
-                            activation: 'softmax'
-                        })
-                    ]
-                });
-
-                model.compile({
-                    optimizer: tf.train.adam(0.01), // Learning rate plus élevé
-                    loss: 'categoricalCrossentropy',
-                    metrics: ['accuracy']
-                });
-
-                // Préparer un dataset plus petit mais efficace
-                const trainSet = mnist.set(2000, 500); // Dataset réduit pour vitesse
-                const trainInputs = tf.tensor2d(trainSet.training.map(item => item.input));
-                const trainLabels = tf.tensor2d(trainSet.training.map(item => item.output));
-
-                document.getElementById('trainingStatus').innerHTML = `
-                    <div class="training-status">
-                        🎯 <strong>Entraînement en cours...</strong><br>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <div id="epochInfo">Époque 1/5...</div>
-                    </div>
-                `;
-
-                // Entraînement rapide (5 epochs seulement)
-                const history = await model.fit(trainInputs, trainLabels, {
-                    epochs: 5,
-                    batchSize: 64, // Batch plus gros = plus rapide
-                    validationSplit: 0.1,
-                    callbacks: {
-                        onEpochEnd: (epoch, logs) => {
-                            const progress = ((epoch + 1) / 5) * 100;
-                            document.getElementById('progressFill').style.width = `${progress}%`;
-                            
-                            const accuracy = (logs.acc * 100).toFixed(1);
-                            const loss = logs.loss.toFixed(4);
-                            
-                            document.getElementById('epochInfo').innerHTML = `
-                                Époque ${epoch + 1}/5 | 
-                                Précision: ${accuracy}% | 
-                                Perte: ${loss}
-                            `;
-                        }
-                    }
-                });
-
-                modelTrained = true;
+                model = await tf.loadLayersModel(
+                  "https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json"
+                );
+                modelReady = true;
+                document.getElementById('result').innerHTML = "✅ Modèle pré-entraîné chargé !";
                 document.getElementById('predictBtn').disabled = false;
-
-                const finalAccuracy = (history.history.acc[history.history.acc.length - 1] * 100).toFixed(1);
-
-                document.getElementById('trainingStatus').innerHTML = `
-                    <div class="training-status" style="background: rgba(0, 255, 0, 0.2);">
-                        ✅ <strong>Entraînement terminé !</strong><br>
-                        🎯 Précision: ${finalAccuracy}%<br>
-                        🚀 Prêt pour la reconnaissance !<br>
-                        <small>Modèle entraîné sur 2,000 échantillons MNIST réels</small>
-                    </div>
-                `;
-
-                // Nettoyer
-                trainInputs.dispose();
-                trainLabels.dispose();
-
-            } catch (error) {
-                console.error('Erreur entraînement:', error);
-                document.getElementById('trainingStatus').innerHTML = `
-                    ❌ <strong>Erreur d'entraînement:</strong> ${error.message}
-                `;
-                document.getElementById('trainBtn').disabled = false;
+            } catch (err) {
+                document.getElementById('result').innerHTML = "❌ Erreur de chargement : " + err;
             }
         }
 
         async function predict() {
-            if (!modelTrained) {
-                alert('Entraînez d\'abord le modèle !');
+            if (!modelReady) {
+                alert("Le modèle n'est pas encore chargé !");
                 return;
             }
 
-            try {
-                // Convertir le canvas en format MNIST
-                let tensor = tf.browser.fromPixels(canvas, 1);
-                tensor = tf.image.resizeBilinear(tensor, [28, 28]);
-                tensor = tensor.div(255.0);
-                tensor = tf.sub(1.0, tensor); // Inverser (fond noir MNIST)
-                tensor = tensor.flatten();
-                tensor = tensor.expandDims(0);
+            let tensor = tf.browser.fromPixels(canvas, 1);
+            tensor = tf.image.resizeBilinear(tensor, [28, 28]);
+            tensor = tensor.div(255.0);
+            tensor = tf.sub(1.0, tensor); // inverser (MNIST est blanc sur noir)
+            tensor = tensor.expandDims(0);
 
-                // Prédiction
-                const prediction = model.predict(tensor);
-                const probabilities = await prediction.data();
+            const prediction = model.predict(tensor);
+            const probabilities = await prediction.data();
 
-                const maxIndex = probabilities.indexOf(Math.max(...probabilities));
-                const confidence = (probabilities[maxIndex] * 100).toFixed(1);
+            const maxIndex = probabilities.indexOf(Math.max(...probabilities));
+            const confidence = (probabilities[maxIndex] * 100).toFixed(1);
 
-                // Affichage
-                let resultHTML = `
-                    <div class="prediction">${maxIndex}</div>
-                    <div class="confidence">Confiance: ${confidence}%</div>
-                    <div style="font-size:14px; margin:15px 0; color: #90EE90;">
-                        ✅ Reconnu par modèle entraîné sur vraies données MNIST
+            let resultHTML = `
+                <div class="prediction">${maxIndex}</div>
+                <div class="confidence">Confiance: ${confidence}%</div>
+            `;
+
+            resultHTML += '<div class="predictions-grid">';
+            probabilities.forEach((prob, index) => {
+                const conf = (prob * 100).toFixed(1);
+                resultHTML += `
+                    <div class="pred-item ${index === maxIndex ? 'best' : ''}">
+                        <strong>${index}</strong><br>
+                        <small>${conf}%</small>
                     </div>
                 `;
+            });
+            resultHTML += '</div>';
 
-                resultHTML += '<div class="predictions-grid">';
-                probabilities.forEach((prob, index) => {
-                    const conf = (prob * 100).toFixed(1);
-                    resultHTML += `
-                        <div class="pred-item ${index === maxIndex ? 'best' : ''}">
-                            <strong>${index}</strong><br>
-                            <small>${conf}%</small>
-                        </div>
-                    `;
-                });
-                resultHTML += '</div>';
+            document.getElementById('result').innerHTML = resultHTML;
 
-                document.getElementById('result').innerHTML = resultHTML;
-
-                // Nettoyer
-                tensor.dispose();
-                prediction.dispose();
-
-            } catch (error) {
-                console.error('Erreur prédiction:', error);
-                document.getElementById('result').innerHTML = `❌ Erreur: ${error.message}`;
-            }
+            tensor.dispose();
+            prediction.dispose();
         }
 
         function setupDrawingEvents() {
@@ -498,7 +190,7 @@
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', stopDraw);
             canvas.addEventListener('mouseout', stopDraw);
-            
+
             canvas.addEventListener('touchstart', handleTouch, {passive: false});
             canvas.addEventListener('touchmove', handleTouch, {passive: false});
             canvas.addEventListener('touchend', stopDraw);
