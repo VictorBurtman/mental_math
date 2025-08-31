@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solutions MNIST qui FONCTIONNENT - Testées</title>
+    <title>Intégrer UCSD MNIST - Guide d'intégration</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,270 +21,458 @@
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
-        .verified {
-            background: rgba(0, 255, 0, 0.2);
-            border: 2px solid rgba(0, 255, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .solutions-grid {
+        .method-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
-        .solution-card {
+        .method-card {
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 15px;
             padding: 20px;
             transition: all 0.3s ease;
-            position: relative;
         }
-        .solution-card:hover {
+        .method-card:hover {
             border-color: #ffd700;
             transform: translateY(-5px);
             box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
         }
-        .solution-card h3 {
+        .method-card h3 {
             color: #ffd700;
             margin-top: 0;
         }
-        .status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 5px 10px;
+        .difficulty {
+            display: inline-block;
+            padding: 5px 15px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
+            margin-bottom: 10px;
         }
-        .working {
-            background: rgba(0, 255, 0, 0.3);
-            color: #90EE90;
-        }
-        .accuracy {
-            background: rgba(0, 255, 0, 0.2);
-            color: #90EE90;
-            padding: 5px 10px;
-            border-radius: 20px;
-            display: inline-block;
-            font-weight: bold;
-            font-size: 14px;
-            margin: 5px 0;
-        }
-        .demo-link {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            display: inline-block;
-            margin: 10px 5px;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-        .demo-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            text-decoration: none;
-            color: white;
-        }
-        .github-link {
-            background: linear-gradient(45deg, #333, #555);
-        }
-        .stanford-link {
-            background: linear-gradient(45deg, #8B0000, #DC143C);
-        }
-        .university-link {
-            background: linear-gradient(45deg, #0066CC, #004499);
-        }
-        .feature-list {
-            list-style: none;
-            padding: 0;
-        }
-        .feature-list li {
-            padding: 5px 0;
-            border-left: 3px solid #ffd700;
-            padding-left: 15px;
-            margin: 10px 0;
-        }
-        .implementation-section {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
+        .easy { background: rgba(0, 255, 0, 0.3); color: #90EE90; }
+        .medium { background: rgba(255, 165, 0, 0.3); color: #FFA500; }
+        .advanced { background: rgba(255, 0, 0, 0.3); color: #FF6B6B; }
         .code-block {
             background: #1a1a1a;
             color: #00ff00;
             padding: 15px;
             border-radius: 8px;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             overflow-x: auto;
-            margin: 10px 0;
+            margin: 15px 0;
             border-left: 4px solid #ffd700;
+            font-size: 13px;
         }
-        .warning {
-            background: rgba(255, 165, 0, 0.2);
-            border: 2px solid rgba(255, 165, 0, 0.5);
-            padding: 15px;
-            border-radius: 10px;
+        .demo-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
             margin: 20px 0;
+        }
+        .sudoku-grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 2px;
+            max-width: 400px;
+            margin: 20px auto;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .sudoku-cell {
+            width: 40px;
+            height: 40px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: black;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .sudoku-cell:hover {
+            background: #ffd700;
+        }
+        .sudoku-cell.empty {
+            background: #f0f0f0;
+            position: relative;
+        }
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .pros, .cons {
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .pros { background: rgba(0, 255, 0, 0.1); border-left: 4px solid #00ff00; }
+        .cons { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #ff0000; }
+        .tab-container {
+            margin: 20px 0;
+        }
+        .tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px 10px 0 0;
+        }
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px 10px 0 0;
+            margin-right: 2px;
+            transition: all 0.3s ease;
+        }
+        .tab.active {
+            background: rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .tab-content {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 0 10px 10px 10px;
+        }
+        .tab-pane {
+            display: none;
+        }
+        .tab-pane.active {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Solutions MNIST qui FONCTIONNENT</h1>
+        <h1>🎯 Intégrer UCSD MNIST dans ton App Sudoku</h1>
         
-        <div class="verified">
-            ✅ <strong>TOUTES CES DÉMOS ONT ÉTÉ TESTÉES ET MARCHENT EN 2024</strong><br>
-            Liens vérifiés, modèles pré-entraînés, reconnaissance immédiate !
+        <div style="background: rgba(0, 255, 0, 0.1); border: 2px solid rgba(0, 255, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <strong>✅ Site UCSD testé et fonctionnel !</strong><br>
+            Voici toutes les méthodes pour l'intégrer dans ton app Sudoku
         </div>
 
-        <div class="solutions-grid">
-            <div class="solution-card">
-                <div class="status-badge working">✅ TESTÉ</div>
-                <h3>🏆 ConvNetJS - Stanford</h3>
-                <div class="accuracy">99% de précision</div>
-                <p><strong>Par Andrej Karpathy (maintenant chez OpenAI)</strong></p>
-                <ul class="feature-list">
-                    <li>✨ Entraînement CNN complet dans le navigateur</li>
-                    <li>🧠 Architecture convolutionnelle pure JavaScript</li>
-                    <li>📊 Visualisation en temps réel du processus</li>
-                    <li>🎯 Précision professionnelle (~99%)</li>
-                    <li>📱 Fonctionne sur mobile et desktop</li>
-                </ul>
-                <a href="https://cs.stanford.edu/people/karpathy/convnetjs/demo/mnist.html" class="demo-link stanford-link" target="_blank">
-                    🎓 Démo Stanford
-                </a>
+        <div class="method-grid">
+            <div class="method-card">
+                <div class="difficulty easy">FACILE</div>
+                <h3>🖼️ Méthode 1 : iFrame</h3>
+                <p><strong>Intégration directe du site UCSD</strong></p>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <strong>✅ Avantages :</strong><br>
+                        • Zéro configuration<br>
+                        • Fonctionne immédiatement<br>
+                        • Toujours à jour
+                    </div>
+                    <div class="cons">
+                        <strong>❌ Inconvénients :</strong><br>
+                        • Pas de customisation<br>
+                        • Dépendant du site<br>
+                        • Interface externe
+                    </div>
+                </div>
+                <div class="code-block">
+&lt;!-- Intégration basique --&gt;
+&lt;iframe 
+    src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html" 
+    width="100%" 
+    height="600px"
+    frameborder="0"&gt;
+&lt;/iframe&gt;
+
+&lt;!-- Intégration dans une modal --&gt;
+&lt;button onclick="openMNIST()"&gt;Reconnaître chiffre&lt;/button&gt;
+&lt;div id="mnistModal" class="modal"&gt;
+    &lt;iframe src="..." width="800" height="600"&gt;&lt;/iframe&gt;
+&lt;/div&gt;
+                </div>
             </div>
 
-            <div class="solution-card">
-                <div class="status-badge working">✅ TESTÉ</div>
-                <h3>🎯 MNIST Playground - UCSD</h3>
-                <div class="accuracy">98.5% de précision</div>
-                <p><strong>Université de Californie San Diego</strong></p>
-                <ul class="feature-list">
-                    <li>🖊️ Interface de dessin optimisée</li>
-                    <li>🔢 20,600 poids pré-calculés en JavaScript</li>
-                    <li>📈 Historique des dessins</li>
-                    <li>💾 Export CSV des données</li>
-                    <li>📋 Architecture détaillée expliquée</li>
-                </ul>
-                <a href="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html" class="demo-link university-link" target="_blank">
-                    🏫 Démo UCSD
-                </a>
-            </div>
-
-            <div class="solution-card">
-                <div class="status-badge working">✅ TESTÉ</div>
-                <h3>💼 SnapLogic Demo</h3>
-                <div class="accuracy">Production ready</div>
-                <p><strong>Démo commerciale professionnelle</strong></p>
-                <ul class="feature-list">
-                    <li>🏢 Qualité entreprise</li>
-                    <li>🧠 CNN entraîné sur 70,000 images</li>
-                    <li>🎨 Interface utilisateur polie</li>
-                    <li>📊 Cas d'usage professionnel</li>
-                    <li>🔧 Documentation technique</li>
-                </ul>
-                <a href="https://www.snaplogic.com/machine-learning-showcase/handwritten-digit-recognition" class="demo-link" target="_blank">
-                    💼 Démo SnapLogic
-                </a>
-            </div>
-
-            <div class="solution-card">
-                <div class="status-badge working">✅ TESTÉ</div>
-                <h3>🔬 DenseInL2 Research</h3>
-                <div class="accuracy">98% de précision</div>
-                <p><strong>Implémentation CNN de recherche</strong></p>
-                <ul class="feature-list">
-                    <li>🔬 Code de recherche académique</li>
-                    <li>📚 Entraîné sur 60,000 images MNIST</li>
-                    <li>⚡ Reconnaissance en temps réel</li>
-                    <li>🧪 Architecture expliquée</li>
-                    <li>📖 Processus détaillé</li>
-                </ul>
-                <a href="http://www.denseinl2.com/webcnn/digitdemo.html" class="demo-link" target="_blank">
-                    🔬 Démo Research
-                </a>
-            </div>
-        </div>
-
-        <div class="implementation-section">
-            <h3>🛠️ COMMENT INTÉGRER DANS TON PROJET :</h3>
-            
-            <div class="warning">
-                <strong>⚠️ Note importante :</strong> Ces démos utilisent leurs propres modèles hébergés. Pour ton projet, tu as 3 options :
-            </div>
-
-            <h4>🎯 Option 1 - Utiliser directement (Recommandé) :</h4>
-            <div class="code-block">
-// Intégrer via iframe
-&lt;iframe src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html" 
-        width="800" height="600"&gt;&lt;/iframe&gt;
-
-// Ou rediriger vers la démo
-window.open('https://cs.stanford.edu/people/karpathy/convnetjs/demo/mnist.html');
-            </div>
-
-            <h4>🔧 Option 2 - Récupérer le code source :</h4>
-            <div class="code-block">
-// ConvNetJS (Open Source)
-git clone https://github.com/karpathy/convnetjs
-cd convnetjs/demo/
-
-// Ou télécharger directement les fichiers JS
-wget https://cs.stanford.edu/people/karpathy/convnetjs/build/convnet.js
-
-// Intégrer dans ton projet
-&lt;script src="convnet.js"&gt;&lt;/script&gt;
-            </div>
-
-            <h4>🚀 Option 3 - Créer ta propre API :</h4>
-            <div class="code-block">
-// Utiliser TensorFlow.js avec un modèle pré-entraîné
-const model = await tf.loadLayersModel('URL_DU_MODELE/model.json');
-
-// Fonction de prédiction
-async function predictDigit(canvas) {
-    const tensor = tf.browser.fromPixels(canvas, 1)
-        .resizeBilinear([28, 28])
-        .div(255.0)
-        .expandDims(0);
+            <div class="method-card">
+                <div class="difficulty medium">MOYEN</div>
+                <h3>🌐 Méthode 2 : Popup/Nouvelle fenêtre</h3>
+                <p><strong>Ouvrir UCSD dans une fenêtre séparée</strong></p>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <strong>✅ Avantages :</strong><br>
+                        • Interface dédiée<br>
+                        • Garde ton app propre<br>
+                        • Contrôle de la fenêtre
+                    </div>
+                    <div class="cons">
+                        <strong>❌ Inconvénients :</strong><br>
+                        • Communication limitée<br>
+                        • Bloqueurs de popup<br>
+                        • UX fragmentée
+                    </div>
+                </div>
+                <div class="code-block">
+function openMNISTRecognition(cellId) {
+    // Ouvrir UCSD MNIST dans une nouvelle fenêtre
+    const mnistWindow = window.open(
+        'https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html',
+        'MNISTRecognition',
+        'width=900,height=700,scrollbars=yes,resizable=yes'
+    );
     
-    const prediction = model.predict(tensor);
-    const result = prediction.argMax(1).dataSync()[0];
-    
-    return result;
+    // Surveiller la fermeture (optionnel)
+    const checkClosed = setInterval(() => {
+        if (mnistWindow.closed) {
+            clearInterval(checkClosed);
+            // L'utilisateur peut maintenant entrer le chiffre manuellement
+            const digit = prompt("Quel chiffre avez-vous reconnu ?");
+            if (digit) {
+                document.getElementById(cellId).textContent = digit;
+            }
+        }
+    }, 1000);
 }
+
+// Usage dans ton Sudoku
+&lt;div class="sudoku-cell" onclick="openMNISTRecognition('cell-0-0')"&gt;
+    Cliquer pour reconnaître
+&lt;/div&gt;
+                </div>
             </div>
 
-            <h4>📚 Ressources pour aller plus loin :</h4>
-            <ul class="feature-list">
-                <li>📖 <strong>ConvNetJS</strong> : https://github.com/karpathy/convnetjs</li>
-                <li>🎓 <strong>Cours Stanford CS231n</strong> : http://cs231n.stanford.edu/</li>
-                <li>📊 <strong>TensorFlow.js</strong> : https://www.tensorflow.org/js</li>
-                <li>🏆 <strong>Kaggle MNIST</strong> : https://www.kaggle.com/competitions/digit-recognizer</li>
-            </ul>
+            <div class="method-card">
+                <div class="difficulty advanced">AVANCÉ</div>
+                <h3>🔧 Méthode 3 : Extraction du code</h3>
+                <p><strong>Récupérer et adapter le code JavaScript</strong></p>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <strong>✅ Avantages :</strong><br>
+                        • Contrôle total<br>
+                        • Intégration native<br>
+                        • Customisation complète
+                    </div>
+                    <div class="cons">
+                        <strong>❌ Inconvénients :</strong><br>
+                        • Plus complexe<br>
+                        • Maintenance nécessaire<br>
+                        • Reverse engineering
+                    </div>
+                </div>
+                <div class="code-block">
+// 1. Récupérer le source de la page UCSD
+// View Source: https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html
+
+// 2. Extraire les parties importantes :
+// - La fonction de reconnaissance (réseau de neurones)
+// - Le canvas de dessin
+// - Les poids du modèle (20,600 weights hardcoded)
+
+// 3. Créer ta propre version intégrée :
+class MNISTRecognizer {
+    constructor() {
+        this.weights = /* copier les poids du code UCSD */;
+        this.setupCanvas();
+    }
+    
+    setupCanvas() {
+        this.canvas = document.createElement('canvas');
+        this.canvas.width = 280;
+        this.canvas.height = 280;
+        // ... setup du canvas de dessin
+    }
+    
+    recognize() {
+        // Utiliser le code de reconnaissance UCSD
+        const prediction = this.neuralNetwork(this.getCanvasData());
+        return prediction;
+    }
+}
+
+// Usage dans Sudoku
+const recognizer = new MNISTRecognizer();
+document.getElementById('sudoku-cell').appendChild(recognizer.canvas);
+                </div>
+            </div>
+
+            <div class="method-card">
+                <div class="difficulty medium">MOYEN</div>
+                <h3>📱 Méthode 4 : Communication via postMessage</h3>
+                <p><strong>Communication avancée avec l'iframe</strong></p>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <strong>✅ Avantages :</strong><br>
+                        • Récupère les résultats<br>
+                        • Interface intégrée<br>
+                        • Automatisation possible
+                    </div>
+                    <div class="cons">
+                        <strong>❌ Inconvénients :</strong><br>
+                        • CORS peut bloquer<br>
+                        • Modification UCSD nécessaire<br>
+                        • Complexité technique
+                    </div>
+                </div>
+                <div class="code-block">
+// ⚠️ Cette méthode nécessite de modifier le site UCSD
+// ou d'utiliser un proxy/wrapper
+
+// Dans ton app :
+window.addEventListener('message', function(event) {
+    if (event.origin === 'https://www.ccom.ucsd.edu') {
+        const recognizedDigit = event.data.digit;
+        const confidence = event.data.confidence;
+        
+        // Mettre à jour la cellule Sudoku
+        updateSudokuCell(recognizedDigit);
+    }
+});
+
+// Envoyer des commandes à l'iframe :
+const iframe = document.getElementById('mnistFrame');
+iframe.contentWindow.postMessage({
+    command: 'clear'
+}, 'https://www.ccom.ucsd.edu');
+                </div>
+            </div>
         </div>
 
-        <div style="text-align: center; margin: 30px 0; padding: 20px; background: rgba(255, 215, 0, 0.1); border-radius: 10px;">
-            <h3>🎯 MA RECOMMANDATION FINALE :</h3>
-            <p style="font-size: 18px;">
-                <strong>Commence par tester la démo UCSD</strong> (la plus complète)<br>
-                puis <strong>étudie le code ConvNetJS</strong> (le plus éducatif)<br>
-                et <strong>utilise SnapLogic</strong> comme référence professionnelle !
-            </p>
-            <a href="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html" class="demo-link university-link" target="_blank" style="font-size: 18px; padding: 15px 30px;">
-                🚀 COMMENCER PAR LA DÉMO UCSD
-            </a>
+        <div class="demo-section">
+            <h3>🎮 Démo d'intégration Sudoku</h3>
+            <p>Voici comment ça pourrait ressembler dans ton app Sudoku :</p>
+            
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab(0)">Méthode 1 - iFrame</div>
+                    <div class="tab" onclick="switchTab(1)">Méthode 2 - Popup</div>
+                    <div class="tab" onclick="switchTab(2)">Méthode 3 - Intégré</div>
+                </div>
+                
+                <div class="tab-content">
+                    <div class="tab-pane active">
+                        <h4>🖼️ Version iFrame</h4>
+                        <div class="code-block">
+&lt;div class="sudoku-container"&gt;
+    &lt;div class="sudoku-grid"&gt;
+        &lt;!-- Grille Sudoku normale --&gt;
+    &lt;/div&gt;
+    
+    &lt;div class="mnist-panel"&gt;
+        &lt;h3&gt;✏️ Reconnaissance de chiffres&lt;/h3&gt;
+        &lt;iframe 
+            id="mnistRecognizer"
+            src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
+            width="400" 
+            height="500"
+            style="border: 2px solid #ffd700; border-radius: 10px;"&gt;
+        &lt;/iframe&gt;
+        &lt;button onclick="useRecognizedDigit()"&gt;
+            📝 Utiliser le chiffre reconnu
+        &lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane">
+                        <h4>🌐 Version Popup</h4>
+                        <div class="code-block">
+&lt;div class="sudoku-cell empty" onclick="recognizeDigit(this)"&gt;
+    &lt;span class="hint"&gt;✏️&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+function recognizeDigit(cell) {
+    const popup = window.open(
+        'https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html',
+        'MNIST',
+        'width=800,height=600'
+    );
+    
+    // Simuler la récupération du résultat
+    setTimeout(() => {
+        if (popup.closed) {
+            const digit = prompt("Quel chiffre avez-vous reconnu ?");
+            if (digit && digit.match(/[1-9]/)) {
+                cell.textContent = digit;
+                cell.classList.remove('empty');
+                validateSudoku();
+            }
+        }
+    }, 5000);
+}
+&lt;/script&gt;
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane">
+                        <h4>🔧 Version Intégrée</h4>
+                        <div class="code-block">
+&lt;div class="sudoku-cell-with-recognition"&gt;
+    &lt;canvas id="drawingCanvas" width="120" height="120"&gt;&lt;/canvas&gt;
+    &lt;div class="recognition-result"&gt;
+        &lt;span id="recognizedDigit"&gt;?&lt;/span&gt;
+        &lt;button onclick="confirmDigit()"&gt;✅&lt;/button&gt;
+        &lt;button onclick="clearCanvas()"&gt;🗑️&lt;/button&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+// Code extrait et adapté du site UCSD
+class SudokuMNIST {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.setupDrawing();
+        this.loadModel(); // Poids du modèle UCSD
+    }
+    
+    recognize() {
+        const imageData = this.preprocessImage();
+        const prediction = this.neuralNetwork(imageData);
+        return prediction;
+    }
+}
+&lt;/script&gt;
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
+            <h3>🎯 MA RECOMMANDATION POUR TON SUDOKU :</h3>
+            <p><strong>Commence par la Méthode 1 (iFrame)</strong> pour tester rapidement,<br>
+            puis passe à la <strong>Méthode 3 (Code intégré)</strong> quand tu voudras personnaliser !</p>
+            
+            <div class="code-block" style="text-align: left;">
+// Code de démarrage rapide pour ton Sudoku :
+&lt;div class="sudoku-with-mnist"&gt;
+    &lt;div class="sudoku-grid"&gt;
+        &lt;!-- Ta grille Sudoku existante --&gt;
+    &lt;/div&gt;
+    
+    &lt;div class="mnist-sidebar"&gt;
+        &lt;h3&gt;Reconnaissance de chiffres&lt;/h3&gt;
+        &lt;iframe 
+            src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
+            width="100%" 
+            height="500"
+            style="border-radius: 10px;"&gt;
+        &lt;/iframe&gt;
+        &lt;p&gt;👆 Dessinez votre chiffre ci-dessus, puis cliquez sur une cellule pour l'insérer&lt;/p&gt;
+    &lt;/div&gt;
+&lt;/div&gt;
+            </div>
         </div>
     </div>
+
+    <script>
+        function switchTab(tabIndex) {
+            // Cacher tous les onglets
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            // Activer l'onglet sélectionné
+            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
+            document.querySelectorAll('.tab-pane')[tabIndex].classList.add('active');
+        }
+    </script>
 </body>
 </html>
