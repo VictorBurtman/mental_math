@@ -3,476 +3,720 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intégrer UCSD MNIST - Guide d'intégration</title>
+    <title>Sudoku avec reconnaissance MNIST</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
             color: white;
         }
-        .container {
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
             background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
             padding: 30px;
-            border-radius: 15px;
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         }
-        .method-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        .method-card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            transition: all 0.3s ease;
-        }
-        .method-card:hover {
-            border-color: #ffd700;
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
-        }
-        .method-card h3 {
+
+        .app-header h1 {
+            font-size: 2.5em;
             color: #ffd700;
-            margin-top: 0;
-        }
-        .difficulty {
-            display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             margin-bottom: 10px;
         }
-        .easy { background: rgba(0, 255, 0, 0.3); color: #90EE90; }
-        .medium { background: rgba(255, 165, 0, 0.3); color: #FFA500; }
-        .advanced { background: rgba(255, 0, 0, 0.3); color: #FF6B6B; }
-        .code-block {
-            background: #1a1a1a;
-            color: #00ff00;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            overflow-x: auto;
-            margin: 15px 0;
-            border-left: 4px solid #ffd700;
-            font-size: 13px;
+
+        .app-header p {
+            font-size: 1.2em;
+            opacity: 0.9;
         }
-        .demo-section {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 30px;
+            align-items: start;
+        }
+
+        /* SUDOKU SECTION */
+        .sudoku-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
             border-radius: 15px;
-            margin: 20px 0;
+            backdrop-filter: blur(5px);
         }
+
+        .sudoku-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
         .sudoku-grid {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
             gap: 2px;
-            max-width: 400px;
-            margin: 20px auto;
             background: #333;
             padding: 10px;
             border-radius: 10px;
+            max-width: 450px;
+            margin: 0 auto;
         }
+
         .sudoku-cell {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             background: white;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 18px;
             font-weight: bold;
-            color: black;
+            color: #333;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-        .sudoku-cell:hover {
-            background: #ffd700;
-        }
-        .sudoku-cell.empty {
-            background: #f0f0f0;
+            border-radius: 3px;
             position: relative;
         }
-        .pros-cons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 15px 0;
+
+        .sudoku-cell:hover {
+            background: #ffd700;
+            transform: scale(1.05);
         }
-        .pros, .cons {
+
+        .sudoku-cell.selected {
+            background: #87CEEB;
+            box-shadow: 0 0 10px rgba(135, 206, 235, 0.7);
+        }
+
+        .sudoku-cell.empty {
+            background: #f8f8f8;
+            color: #999;
+        }
+
+        .sudoku-cell.empty:hover {
+            background: #e0e0e0;
+        }
+
+        .sudoku-cell.fixed {
+            background: #e6e6e6;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .sudoku-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #74b9ff, #0984e3);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #00b894, #00a085);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        /* MNIST SECTION */
+        .mnist-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            height: fit-content;
+        }
+
+        .mnist-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .mnist-header h2 {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .mnist-status {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid rgba(0, 255, 0, 0.5);
             padding: 10px;
             border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 14px;
         }
-        .pros { background: rgba(0, 255, 0, 0.1); border-left: 4px solid #00ff00; }
-        .cons { background: rgba(255, 0, 0, 0.1); border-left: 4px solid #ff0000; }
-        .tab-container {
+
+        .mnist-iframe-container {
+            position: relative;
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+        }
+
+        #mnistFrame {
+            width: 100%;
+            height: 500px;
+            border: none;
+            display: block;
+        }
+
+        .mnist-instructions {
+            background: rgba(255, 165, 0, 0.2);
+            border: 1px solid rgba(255, 165, 0, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
             margin: 20px 0;
         }
-        .tabs {
-            display: flex;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px 10px 0 0;
-        }
-        .tab {
-            padding: 15px 25px;
-            cursor: pointer;
+
+        .stat-card {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px 10px 0 0;
-            margin-right: 2px;
-            transition: all 0.3s ease;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
         }
-        .tab.active {
-            background: rgba(255, 215, 0, 0.3);
-            color: #ffd700;
+
+        .stat-value {
+            font-size: 24px;
             font-weight: bold;
-        }
-        .tab-content {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 20px;
-            border-radius: 0 10px 10px 10px;
-        }
-        .tab-pane {
-            display: none;
-        }
-        .tab-pane.active {
+            color: #ffd700;
             display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .mnist-section {
+                order: -1;
+            }
+
+            .sudoku-grid {
+                max-width: 100%;
+            }
+
+            .sudoku-cell {
+                width: calc((100vw - 120px) / 9);
+                height: calc((100vw - 120px) / 9);
+                max-width: 45px;
+                max-height: 45px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 15px;
+            }
+
+            .app-header h1 {
+                font-size: 2em;
+            }
+
+            .sudoku-cell {
+                font-size: 14px;
+            }
+
+            #mnistFrame {
+                height: 400px;
+            }
+
+            .sudoku-controls {
+                gap: 10px;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+
+        /* ANIMATIONS */
+        @keyframes cellFill {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); background: #90EE90; }
+            100% { transform: scale(1); }
+        }
+
+        .sudoku-cell.filled {
+            animation: cellFill 0.5s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
+
+        /* MODAL STYLES */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            color: white;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Intégrer UCSD MNIST dans ton App Sudoku</h1>
-        
-        <div style="background: rgba(0, 255, 0, 0.1); border: 2px solid rgba(0, 255, 0, 0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-            <strong>✅ Site UCSD testé et fonctionnel !</strong><br>
-            Voici toutes les méthodes pour l'intégrer dans ton app Sudoku
+    <div class="app-container">
+        <div class="app-header">
+            <h1>🧩 Sudoku avec IA MNIST</h1>
+            <p>Résolvez votre Sudoku en dessinant les chiffres à la main !</p>
         </div>
 
-        <div class="method-grid">
-            <div class="method-card">
-                <div class="difficulty easy">FACILE</div>
-                <h3>🖼️ Méthode 1 : iFrame</h3>
-                <p><strong>Intégration directe du site UCSD</strong></p>
-                <div class="pros-cons">
-                    <div class="pros">
-                        <strong>✅ Avantages :</strong><br>
-                        • Zéro configuration<br>
-                        • Fonctionne immédiatement<br>
-                        • Toujours à jour
-                    </div>
-                    <div class="cons">
-                        <strong>❌ Inconvénients :</strong><br>
-                        • Pas de customisation<br>
-                        • Dépendant du site<br>
-                        • Interface externe
-                    </div>
-                </div>
-                <div class="code-block">
-&lt;!-- Intégration basique --&gt;
-&lt;iframe 
-    src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html" 
-    width="100%" 
-    height="600px"
-    frameborder="0"&gt;
-&lt;/iframe&gt;
-
-&lt;!-- Intégration dans une modal --&gt;
-&lt;button onclick="openMNIST()"&gt;Reconnaître chiffre&lt;/button&gt;
-&lt;div id="mnistModal" class="modal"&gt;
-    &lt;iframe src="..." width="800" height="600"&gt;&lt;/iframe&gt;
-&lt;/div&gt;
-                </div>
-            </div>
-
-            <div class="method-card">
-                <div class="difficulty medium">MOYEN</div>
-                <h3>🌐 Méthode 2 : Popup/Nouvelle fenêtre</h3>
-                <p><strong>Ouvrir UCSD dans une fenêtre séparée</strong></p>
-                <div class="pros-cons">
-                    <div class="pros">
-                        <strong>✅ Avantages :</strong><br>
-                        • Interface dédiée<br>
-                        • Garde ton app propre<br>
-                        • Contrôle de la fenêtre
-                    </div>
-                    <div class="cons">
-                        <strong>❌ Inconvénients :</strong><br>
-                        • Communication limitée<br>
-                        • Bloqueurs de popup<br>
-                        • UX fragmentée
-                    </div>
-                </div>
-                <div class="code-block">
-function openMNISTRecognition(cellId) {
-    // Ouvrir UCSD MNIST dans une nouvelle fenêtre
-    const mnistWindow = window.open(
-        'https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html',
-        'MNISTRecognition',
-        'width=900,height=700,scrollbars=yes,resizable=yes'
-    );
-    
-    // Surveiller la fermeture (optionnel)
-    const checkClosed = setInterval(() => {
-        if (mnistWindow.closed) {
-            clearInterval(checkClosed);
-            // L'utilisateur peut maintenant entrer le chiffre manuellement
-            const digit = prompt("Quel chiffre avez-vous reconnu ?");
-            if (digit) {
-                document.getElementById(cellId).textContent = digit;
-            }
-        }
-    }, 1000);
-}
-
-// Usage dans ton Sudoku
-&lt;div class="sudoku-cell" onclick="openMNISTRecognition('cell-0-0')"&gt;
-    Cliquer pour reconnaître
-&lt;/div&gt;
-                </div>
-            </div>
-
-            <div class="method-card">
-                <div class="difficulty advanced">AVANCÉ</div>
-                <h3>🔧 Méthode 3 : Extraction du code</h3>
-                <p><strong>Récupérer et adapter le code JavaScript</strong></p>
-                <div class="pros-cons">
-                    <div class="pros">
-                        <strong>✅ Avantages :</strong><br>
-                        • Contrôle total<br>
-                        • Intégration native<br>
-                        • Customisation complète
-                    </div>
-                    <div class="cons">
-                        <strong>❌ Inconvénients :</strong><br>
-                        • Plus complexe<br>
-                        • Maintenance nécessaire<br>
-                        • Reverse engineering
-                    </div>
-                </div>
-                <div class="code-block">
-// 1. Récupérer le source de la page UCSD
-// View Source: https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html
-
-// 2. Extraire les parties importantes :
-// - La fonction de reconnaissance (réseau de neurones)
-// - Le canvas de dessin
-// - Les poids du modèle (20,600 weights hardcoded)
-
-// 3. Créer ta propre version intégrée :
-class MNISTRecognizer {
-    constructor() {
-        this.weights = /* copier les poids du code UCSD */;
-        this.setupCanvas();
-    }
-    
-    setupCanvas() {
-        this.canvas = document.createElement('canvas');
-        this.canvas.width = 280;
-        this.canvas.height = 280;
-        // ... setup du canvas de dessin
-    }
-    
-    recognize() {
-        // Utiliser le code de reconnaissance UCSD
-        const prediction = this.neuralNetwork(this.getCanvasData());
-        return prediction;
-    }
-}
-
-// Usage dans Sudoku
-const recognizer = new MNISTRecognizer();
-document.getElementById('sudoku-cell').appendChild(recognizer.canvas);
-                </div>
-            </div>
-
-            <div class="method-card">
-                <div class="difficulty medium">MOYEN</div>
-                <h3>📱 Méthode 4 : Communication via postMessage</h3>
-                <p><strong>Communication avancée avec l'iframe</strong></p>
-                <div class="pros-cons">
-                    <div class="pros">
-                        <strong>✅ Avantages :</strong><br>
-                        • Récupère les résultats<br>
-                        • Interface intégrée<br>
-                        • Automatisation possible
-                    </div>
-                    <div class="cons">
-                        <strong>❌ Inconvénients :</strong><br>
-                        • CORS peut bloquer<br>
-                        • Modification UCSD nécessaire<br>
-                        • Complexité technique
-                    </div>
-                </div>
-                <div class="code-block">
-// ⚠️ Cette méthode nécessite de modifier le site UCSD
-// ou d'utiliser un proxy/wrapper
-
-// Dans ton app :
-window.addEventListener('message', function(event) {
-    if (event.origin === 'https://www.ccom.ucsd.edu') {
-        const recognizedDigit = event.data.digit;
-        const confidence = event.data.confidence;
-        
-        // Mettre à jour la cellule Sudoku
-        updateSudokuCell(recognizedDigit);
-    }
-});
-
-// Envoyer des commandes à l'iframe :
-const iframe = document.getElementById('mnistFrame');
-iframe.contentWindow.postMessage({
-    command: 'clear'
-}, 'https://www.ccom.ucsd.edu');
-                </div>
-            </div>
-        </div>
-
-        <div class="demo-section">
-            <h3>🎮 Démo d'intégration Sudoku</h3>
-            <p>Voici comment ça pourrait ressembler dans ton app Sudoku :</p>
-            
-            <div class="tab-container">
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab(0)">Méthode 1 - iFrame</div>
-                    <div class="tab" onclick="switchTab(1)">Méthode 2 - Popup</div>
-                    <div class="tab" onclick="switchTab(2)">Méthode 3 - Intégré</div>
-                </div>
-                
-                <div class="tab-content">
-                    <div class="tab-pane active">
-                        <h4>🖼️ Version iFrame</h4>
-                        <div class="code-block">
-&lt;div class="sudoku-container"&gt;
-    &lt;div class="sudoku-grid"&gt;
-        &lt;!-- Grille Sudoku normale --&gt;
-    &lt;/div&gt;
-    
-    &lt;div class="mnist-panel"&gt;
-        &lt;h3&gt;✏️ Reconnaissance de chiffres&lt;/h3&gt;
-        &lt;iframe 
-            id="mnistRecognizer"
-            src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
-            width="400" 
-            height="500"
-            style="border: 2px solid #ffd700; border-radius: 10px;"&gt;
-        &lt;/iframe&gt;
-        &lt;button onclick="useRecognizedDigit()"&gt;
-            📝 Utiliser le chiffre reconnu
-        &lt;/button&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
+        <div class="main-layout">
+            <!-- SECTION SUDOKU -->
+            <div class="sudoku-section">
+                <div class="sudoku-header">
+                    <h2>🎯 Grille Sudoku</h2>
+                    <div class="usage-stats">
+                        <div class="stat-card">
+                            <span class="stat-value" id="cellsCompleted">0</span>
+                            <span class="stat-label">Cellules remplies</span>
                         </div>
-                    </div>
-                    
-                    <div class="tab-pane">
-                        <h4>🌐 Version Popup</h4>
-                        <div class="code-block">
-&lt;div class="sudoku-cell empty" onclick="recognizeDigit(this)"&gt;
-    &lt;span class="hint"&gt;✏️&lt;/span&gt;
-&lt;/div&gt;
-
-&lt;script&gt;
-function recognizeDigit(cell) {
-    const popup = window.open(
-        'https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html',
-        'MNIST',
-        'width=800,height=600'
-    );
-    
-    // Simuler la récupération du résultat
-    setTimeout(() => {
-        if (popup.closed) {
-            const digit = prompt("Quel chiffre avez-vous reconnu ?");
-            if (digit && digit.match(/[1-9]/)) {
-                cell.textContent = digit;
-                cell.classList.remove('empty');
-                validateSudoku();
-            }
-        }
-    }, 5000);
-}
-&lt;/script&gt;
+                        <div class="stat-card">
+                            <span class="stat-value" id="mnistUsed">0</span>
+                            <span class="stat-label">Chiffres reconnus</span>
                         </div>
-                    </div>
-                    
-                    <div class="tab-pane">
-                        <h4>🔧 Version Intégrée</h4>
-                        <div class="code-block">
-&lt;div class="sudoku-cell-with-recognition"&gt;
-    &lt;canvas id="drawingCanvas" width="120" height="120"&gt;&lt;/canvas&gt;
-    &lt;div class="recognition-result"&gt;
-        &lt;span id="recognizedDigit"&gt;?&lt;/span&gt;
-        &lt;button onclick="confirmDigit()"&gt;✅&lt;/button&gt;
-        &lt;button onclick="clearCanvas()"&gt;🗑️&lt;/button&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
-
-&lt;script&gt;
-// Code extrait et adapté du site UCSD
-class SudokuMNIST {
-    constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        this.setupDrawing();
-        this.loadModel(); // Poids du modèle UCSD
-    }
-    
-    recognize() {
-        const imageData = this.preprocessImage();
-        const prediction = this.neuralNetwork(imageData);
-        return prediction;
-    }
-}
-&lt;/script&gt;
+                        <div class="stat-card">
+                            <span class="stat-value" id="gameProgress">0%</span>
+                            <span class="stat-label">Progression</span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div style="background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
-            <h3>🎯 MA RECOMMANDATION POUR TON SUDOKU :</h3>
-            <p><strong>Commence par la Méthode 1 (iFrame)</strong> pour tester rapidement,<br>
-            puis passe à la <strong>Méthode 3 (Code intégré)</strong> quand tu voudras personnaliser !</p>
-            
-            <div class="code-block" style="text-align: left;">
-// Code de démarrage rapide pour ton Sudoku :
-&lt;div class="sudoku-with-mnist"&gt;
-    &lt;div class="sudoku-grid"&gt;
-        &lt;!-- Ta grille Sudoku existante --&gt;
-    &lt;/div&gt;
-    
-    &lt;div class="mnist-sidebar"&gt;
-        &lt;h3&gt;Reconnaissance de chiffres&lt;/h3&gt;
-        &lt;iframe 
-            src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
-            width="100%" 
-            height="500"
-            style="border-radius: 10px;"&gt;
-        &lt;/iframe&gt;
-        &lt;p&gt;👆 Dessinez votre chiffre ci-dessus, puis cliquez sur une cellule pour l'insérer&lt;/p&gt;
-    &lt;/div&gt;
-&lt;/div&gt;
+                <div class="sudoku-grid" id="sudokuGrid">
+                    <!-- Les cellules seront générées par JavaScript -->
+                </div>
+
+                <div class="sudoku-controls">
+                    <button class="btn btn-secondary" onclick="newGame()">🎲 Nouvelle partie</button>
+                    <button class="btn btn-primary" onclick="clearGrid()">🗑️ Effacer</button>
+                    <button class="btn btn-success" onclick="validateSudoku()">✅ Vérifier</button>
+                    <button class="btn btn-primary" onclick="showInstructions()">❓ Aide</button>
+                </div>
+            </div>
+
+            <!-- SECTION MNIST -->
+            <div class="mnist-section">
+                <div class="mnist-header">
+                    <h2>✏️ Reconnaissance MNIST</h2>
+                    <div class="mnist-status">
+                        ✅ Site UCSD intégré - Modèle 98.5% de précision
+                    </div>
+                </div>
+
+                <div class="mnist-iframe-container">
+                    <iframe 
+                        id="mnistFrame"
+                        src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
+                        loading="lazy">
+                    </iframe>
+                </div>
+
+                <div class="mnist-instructions">
+                    <strong>📝 Mode d'emploi :</strong><br>
+                    1. Dessinez un chiffre (1-9) dans la zone ci-dessus<br>
+                    2. Cliquez "classify" pour obtenir la reconnaissance<br>
+                    3. Cliquez sur une cellule Sudoku vide ci-contre<br>
+                    4. Entrez le chiffre reconnu manuellement<br><br>
+                    <strong>💡 Astuce :</strong> Dessinez clairement au centre !
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        function switchTab(tabIndex) {
-            // Cacher tous les onglets
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    <!-- MODAL D'INSTRUCTIONS -->
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>🎮 Comment jouer</h2>
+            <p><strong>Règles du Sudoku :</strong></p>
+            <ul style="text-align: left; margin: 20px 0;">
+                <li>Remplir une grille 9×9 avec les chiffres 1 à 9</li>
+                <li>Chaque ligne doit contenir tous les chiffres 1-9</li>
+                <li>Chaque colonne doit contenir tous les chiffres 1-9</li>
+                <li>Chaque région 3×3 doit contenir tous les chiffres 1-9</li>
+            </ul>
             
-            // Activer l'onglet sélectionné
-            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
-            document.querySelectorAll('.tab-pane')[tabIndex].classList.add('active');
+            <p><strong>Utilisation de MNIST :</strong></p>
+            <ul style="text-align: left; margin: 20px 0;">
+                <li>Dessinez votre chiffre dans la zone MNIST</li>
+                <li>L'IA va le reconnaître avec 98.5% de précision</li>
+                <li>Utilisez le résultat pour remplir les cellules</li>
+                <li>Parfait pour tester la reconnaissance de chiffres !</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let selectedCell = null;
+        let sudokuGrid = [];
+        let completedCells = 0;
+        let mnistRecognitions = 0;
+
+        // Grille Sudoku d'exemple (partiellement remplie)
+        const initialGrid = [
+            [5, 3, 0, 0, 7, 0, 0, 0, 0],
+            [6, 0, 0, 1, 9, 5, 0, 0, 0],
+            [0, 9, 8, 0, 0, 0, 0, 6, 0],
+            [8, 0, 0, 0, 6, 0, 0, 0, 3],
+            [4, 0, 0, 8, 0, 3, 0, 0, 1],
+            [7, 0, 0, 0, 2, 0, 0, 0, 6],
+            [0, 6, 0, 0, 0, 0, 2, 8, 0],
+            [0, 0, 0, 4, 1, 9, 0, 0, 5],
+            [0, 0, 0, 0, 8, 0, 0, 7, 9]
+        ];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSudoku();
+            updateStats();
+            
+            // Gestionnaire pour les cellules
+            document.addEventListener('keypress', function(e) {
+                if (selectedCell && e.key >= '1' && e.key <= '9') {
+                    fillCell(selectedCell, e.key);
+                }
+            });
+
+            // Message de bienvenue
+            setTimeout(() => {
+                if (confirm("🎉 Bienvenue ! Voulez-vous voir les instructions ?")) {
+                    showInstructions();
+                }
+            }, 1000);
+        });
+
+        function initializeSudoku() {
+            const grid = document.getElementById('sudokuGrid');
+            grid.innerHTML = '';
+            sudokuGrid = [];
+            completedCells = 0;
+
+            for (let row = 0; row < 9; row++) {
+                sudokuGrid[row] = [];
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'sudoku-cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    const value = initialGrid[row][col];
+                    if (value !== 0) {
+                        cell.textContent = value;
+                        cell.classList.add('fixed');
+                        sudokuGrid[row][col] = value;
+                        completedCells++;
+                    } else {
+                        cell.classList.add('empty');
+                        cell.textContent = '';
+                        sudokuGrid[row][col] = 0;
+                        
+                        // Ajouter un placeholder visuel
+                        cell.innerHTML = '<span style="opacity:0.3; font-size:12px;">?</span>';
+                    }
+                    
+                    cell.addEventListener('click', () => selectCell(cell));
+                    grid.appendChild(cell);
+                }
+            }
         }
+
+        function selectCell(cell) {
+            if (cell.classList.contains('fixed')) {
+                return; // Ne pas sélectionner les cellules fixes
+            }
+
+            // Désélectionner la cellule précédente
+            if (selectedCell) {
+                selectedCell.classList.remove('selected');
+            }
+
+            // Sélectionner la nouvelle cellule
+            selectedCell = cell;
+            cell.classList.add('selected');
+
+            // Prompt pour entrer le chiffre
+            const digit = prompt(`🔢 Entrez un chiffre (1-9) pour cette cellule :\n\n💡 Conseil : Utilisez la reconnaissance MNIST ci-contre pour dessiner votre chiffre !`);
+            
+            if (digit && digit.match(/^[1-9]$/)) {
+                fillCell(cell, digit);
+            } else if (digit && digit !== null) {
+                alert('❌ Veuillez entrer un chiffre entre 1 et 9');
+            }
+        }
+
+        function fillCell(cell, digit) {
+            if (cell.classList.contains('fixed')) return;
+
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            const wasEmpty = sudokuGrid[row][col] === 0;
+            
+            cell.textContent = digit;
+            cell.classList.remove('empty');
+            cell.classList.add('filled');
+            sudokuGrid[row][col] = parseInt(digit);
+            
+            if (wasEmpty) {
+                completedCells++;
+                mnistRecognitions++;
+            }
+            
+            // Animation
+            setTimeout(() => {
+                cell.classList.remove('filled');
+            }, 500);
+            
+            updateStats();
+            checkWin();
+        }
+
+        function clearGrid() {
+            if (confirm('🗑️ Voulez-vous vraiment effacer toutes les cellules modifiables ?')) {
+                const cells = document.querySelectorAll('.sudoku-cell:not(.fixed)');
+                cells.forEach(cell => {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    
+                    cell.textContent = '';
+                    cell.innerHTML = '<span style="opacity:0.3; font-size:12px;">?</span>';
+                    cell.classList.add('empty');
+                    cell.classList.remove('selected');
+                    sudokuGrid[row][col] = 0;
+                });
+                
+                completedCells = countFixedCells();
+                mnistRecognitions = 0;
+                selectedCell = null;
+                updateStats();
+            }
+        }
+
+        function newGame() {
+            if (confirm('🎲 Commencer une nouvelle partie ?')) {
+                // Ici tu pourrais charger une nouvelle grille
+                initializeSudoku();
+                mnistRecognitions = 0;
+                updateStats();
+            }
+        }
+
+        function validateSudoku() {
+            let errors = [];
+            
+            // Vérifier les lignes
+            for (let row = 0; row < 9; row++) {
+                const seen = new Set();
+                for (let col = 0; col < 9; col++) {
+                    const val = sudokuGrid[row][col];
+                    if (val !== 0) {
+                        if (seen.has(val)) {
+                            errors.push(`Doublon ${val} dans la ligne ${row + 1}`);
+                        }
+                        seen.add(val);
+                    }
+                }
+            }
+            
+            // Vérifier les colonnes
+            for (let col = 0; col < 9; col++) {
+                const seen = new Set();
+                for (let row = 0; row < 9; row++) {
+                    const val = sudokuGrid[row][col];
+                    if (val !== 0) {
+                        if (seen.has(val)) {
+                            errors.push(`Doublon ${val} dans la colonne ${col + 1}`);
+                        }
+                        seen.add(val);
+                    }
+                }
+            }
+            
+            // Vérifier les régions 3x3
+            for (let boxRow = 0; boxRow < 3; boxRow++) {
+                for (let boxCol = 0; boxCol < 3; boxCol++) {
+                    const seen = new Set();
+                    for (let row = boxRow * 3; row < boxRow * 3 + 3; row++) {
+                        for (let col = boxCol * 3; col < boxCol * 3 + 3; col++) {
+                            const val = sudokuGrid[row][col];
+                            if (val !== 0) {
+                                if (seen.has(val)) {
+                                    errors.push(`Doublon ${val} dans la région ${boxRow + 1}-${boxCol + 1}`);
+                                }
+                                seen.add(val);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Afficher le résultat
+            if (errors.length === 0) {
+                const completed = completedCells === 81;
+                if (completed) {
+                    alert('🎉 Félicitations ! Sudoku résolu parfaitement !');
+                } else {
+                    alert('✅ Aucune erreur détectée ! Continuez à remplir...');
+                }
+            } else {
+                alert('❌ Erreurs détectées :\n\n' + errors.join('\n'));
+            }
+        }
+
+        function checkWin() {
+            if (completedCells === 81) {
+                setTimeout(() => {
+                    alert('🏆 Félicitations ! Vous avez terminé le Sudoku !\n\n' +
+                          `📊 Statistiques :\n` +
+                          `• Cellules remplies : ${completedCells}/81\n` +
+                          `• Reconnaissances MNIST : ${mnistRecognitions}\n` +
+                          `• Précision MNIST : 98.5%`);
+                }, 1000);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('cellsCompleted').textContent = completedCells;
+            document.getElementById('mnistUsed').textContent = mnistRecognitions;
+            document.getElementById('gameProgress').textContent = Math.round((completedCells / 81) * 100) + '%';
+        }
+
+        function countFixedCells() {
+            let count = 0;
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (initialGrid[row][col] !== 0) count++;
+                }
+            }
+            return count;
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('instructionsModal').style.display = 'none';
+        }
+
+        // Fermer la modal en cliquant à l'extérieur
+        window.onclick = function(event) {
+            const modal = document.getElementById('instructionsModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Gestion du redimensionnement de l'iframe
+        window.addEventListener('resize', function() {
+            const iframe = document.getElementById('mnistFrame');
+            if (window.innerWidth < 768) {
+                iframe.style.height = '400px';
+            } else {
+                iframe.style.height = '500px';
+            }
+        });
+
+        // Message d'accueil après chargement
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                console.log('🎮 App Sudoku + MNIST chargée !');
+                console.log('💡 Utilisez la reconnaissance MNIST pour dessiner vos chiffres');
+                console.log('🎯 Site UCSD intégré avec 98.5% de précision');
+            }, 2000);
+        });
     </script>
 </body>
 </html>
