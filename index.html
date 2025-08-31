@@ -1,514 +1,91 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MNIST Simple</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            color: white;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 25px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .header h1 {
-            font-size: 2.2em;
-            color: #ffd700;
-            margin-bottom: 8px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-
-        /* SECTION PRINCIPALE - SIMPLE ET CENTRÉE */
-        .main-section {
-            text-align: center;
-        }
-
-        .status-bar {
-            background: rgba(0, 255, 0, 0.2);
-            border: 2px solid rgba(0, 255, 0, 0.4);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-
-        .ucsd-frame {
-            border: 3px solid #ffd700;
-            border-radius: 15px;
-            overflow: hidden;
-            margin: 0 auto 20px auto;
-            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.3);
-            width: 100%;
-            max-width: 800px;
-        }
-
-        #mnistIframe {
-            width: 100%;
-            height: 500px;
-            border: none;
-            display: block;
-        }
-
-        /* CONTRÔLES SIMPLES EN UNE LIGNE */
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 25px;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-auto {
-            background: linear-gradient(45deg, #00b894, #00a085);
-            color: white;
-        }
-
-        .btn-auto.off {
-            background: linear-gradient(45deg, #74b9ff, #0984e3);
-        }
-
-        .btn-secondary {
-            background: linear-gradient(45deg, #6c5ce7, #5a4fcf);
-            color: white;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-        }
-
-        /* RÉSULTAT COMPACT */
-        .result {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 400px;
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .prediction {
-            font-size: 3.5em;
-            font-weight: bold;
-            color: #ffd700;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            margin-bottom: 5px;
-        }
-
-        .confidence {
-            font-size: 1.1em;
-            color: #90EE90;
-            font-weight: bold;
-        }
-
-        .waiting {
-            opacity: 0.7;
-            font-style: italic;
-        }
-
-        /* STATUS SIMPLE */
-        .status-text {
-            margin: 15px 0;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        .countdown {
-            color: #ffa500;
-            font-weight: bold;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-
-        /* INSTRUCTIONS MINIMALISTES */
-        .instructions {
-            background: rgba(255, 165, 0, 0.1);
-            border-left: 4px solid #ffa500;
-            padding: 15px;
-            border-radius: 0 8px 8px 0;
-            margin-top: 20px;
-            font-size: 14px;
-            text-align: left;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* RESPONSIVE SIMPLE */
-        @media (max-width: 700px) {
-            .container {
-                padding: 15px;
-                margin: 10px;
-            }
-
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            #mnistIframe {
-                height: 400px;
-            }
-
-            .controls {
-                gap: 10px;
-            }
-
-            .btn {
-                padding: 10px 18px;
-                font-size: 13px;
-            }
-
-            .prediction {
-                font-size: 2.8em;
-            }
-        }
-
-        /* ANIMATIONS LÉGÈRES */
-        @keyframes glow {
-            0% { box-shadow: 0 6px 25px rgba(255, 215, 0, 0.3); }
-            50% { box-shadow: 0 6px 35px rgba(255, 215, 0, 0.5); }
-            100% { box-shadow: 0 6px 25px rgba(255, 215, 0, 0.3); }
-        }
-
-        .monitoring {
-            animation: glow 2s infinite;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Reconnaissance de chiffres</title>
+  <style>
+    body { text-align: center; font-family: Arial; }
+    canvas { border: 1px solid black; cursor: crosshair; }
+    #result { font-size: 24px; margin-top: 20px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- HEADER SIMPLE -->
-        <div class="header">
-            <h1>🎯 Reconnaissance MNIST</h1>
-            <p>Dessinez un chiffre et obtenez le résultat automatiquement</p>
-        </div>
+  <h1>Reconnaissance de chiffres (MNIST simplifié)</h1>
+  <canvas id="canvas" width="280" height="280"></canvas><br>
+  <button onclick="clearCanvas()">Effacer</button>
+  <button onclick="predict()">Prédire</button>
+  <div id="result">Dessine un chiffre puis clique sur "Prédire"</div>
 
-        <!-- STATUS PRINCIPAL -->
-        <div class="status-bar" id="statusBar">
-            ✅ Modèle UCSD chargé - 98.5% de précision
-        </div>
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+    let drawing = false;
 
-        <!-- IFRAME UCSD CENTRÉ -->
-        <div class="ucsd-frame" id="ucsdFrame">
-            <iframe 
-                id="mnistIframe" 
-                src="https://www.ccom.ucsd.edu/~cdeotte/programs/MNIST.html"
-                loading="lazy">
-            </iframe>
-        </div>
+    canvas.addEventListener("mousedown", () => drawing = true);
+    canvas.addEventListener("mouseup", () => drawing = false);
+    canvas.addEventListener("mousemove", draw);
 
-        <!-- CONTRÔLES EN UNE LIGNE -->
-        <div class="controls">
-            <button id="autoBtn" class="btn btn-auto" onclick="toggleAuto()">
-                🤖 Auto: ON
-            </button>
-            <button class="btn btn-secondary" onclick="checkNow()">
-                🔍 Vérifier
-            </button>
-            <button class="btn btn-secondary" onclick="clearAll()">
-                🗑️ Effacer
-            </button>
-        </div>
+    function draw(e) {
+      if (!drawing) return;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
 
-        <!-- RÉSULTAT COMPACT -->
-        <div class="result">
-            <div id="prediction" class="prediction waiting">?</div>
-            <div id="confidence" class="confidence">Dessinez un chiffre ci-dessus</div>
-        </div>
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      document.getElementById("result").textContent = "Dessine un chiffre puis clique sur 'Prédire'";
+    }
 
-        <!-- STATUS ET COUNTDOWN -->
-        <div id="statusText" class="status-text">
-            🟢 Mode automatique activé - La détection se fait 3 secondes après avoir dessiné
-        </div>
-        <div id="countdown" class="countdown"></div>
+    // === Ici tu colles les poids du site UCSD ===
+    var weightsHidden = [/* ... colle ici ton gros tableau ... */];
+    var weightsOutput = [/* ... colle ici ton autre gros tableau ... */];
 
-        <!-- INSTRUCTIONS MINIMALISTES -->
-        <div class="instructions">
-            <strong>💡 Mode d'emploi :</strong><br>
-            • <strong>Mode Auto</strong> : Dessinez → Attendez 3s → Résultat automatique<br>
-            • <strong>Mode Manuel</strong> : Dessinez → Cliquez "classify" dans le cadre → Ou "Vérifier"<br>
-            • Dessinez clairement au centre pour de meilleurs résultats
-        </div>
-    </div>
+    function sigmoid(x) {
+      return 1 / (1 + Math.exp(-x));
+    }
 
-    <script>
-        let autoMode = true;
-        let detectionTimeout = null;
-        let isDetecting = false;
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🎯 Interface MNIST simple chargée');
-            
-            // Démarrer la surveillance automatique après 2 secondes
-            setTimeout(() => {
-                if (autoMode) {
-                    startAutoDetection();
-                }
-            }, 2000);
-        });
-
-        function startAutoDetection() {
-            // Simuler la détection d'activité de dessin
-            // Dans une vraie implémentation, on surveillerait les événements de l'iframe
-            
-            updateStatus('monitoring');
-            
-            // Simuler une détection d'activité aléatoire pour la démo
-            const randomDetection = setInterval(() => {
-                if (autoMode && Math.random() < 0.08) { // 8% de chance par seconde
-                    onDrawingDetected();
-                    clearInterval(randomDetection);
-                    
-                    // Redémarrer après la détection
-                    setTimeout(() => {
-                        if (autoMode) startAutoDetection();
-                    }, 8000);
-                }
-            }, 1000);
-            
-            // Arrêter après 30 secondes si pas d'activité détectée
-            setTimeout(() => {
-                clearInterval(randomDetection);
-                if (autoMode) startAutoDetection();
-            }, 30000);
+    function predict() {
+      // Récupère l'image 28x28
+      let img = ctx.getImageData(0, 0, 280, 280);
+      let input = [];
+      for (let y = 0; y < 28; y++) {
+        for (let x = 0; x < 28; x++) {
+          let px = ctx.getImageData(x*10, y*10, 10, 10).data;
+          let sum = 0;
+          for (let i = 0; i < px.length; i+=4) sum += px[i+3]; // alpha comme intensité
+          input.push(sum/2550); // normalisation approx
         }
+      }
 
-        function onDrawingDetected() {
-            if (!autoMode || isDetecting) return;
-            
-            updateStatus('detected');
-            startCountdown(3);
-            
-            // Programmer la vérification
-            detectionTimeout = setTimeout(() => {
-                performAutoCheck();
-            }, 3000);
+      // Passe avant : input -> hidden
+      let hidden = [];
+      for (let j = 0; j < 30; j++) {
+        let sum = 0;
+        for (let i = 0; i < 784; i++) {
+          sum += input[i] * weightsHidden[j*784 + i];
         }
+        hidden[j] = sigmoid(sum);
+      }
 
-        function startCountdown(seconds) {
-            let remaining = seconds;
-            const countdownEl = document.getElementById('countdown');
-            
-            const updateCountdown = () => {
-                if (remaining > 0 && autoMode) {
-                    countdownEl.textContent = `⏱️ Vérification dans ${remaining}s...`;
-                    remaining--;
-                    setTimeout(updateCountdown, 1000);
-                } else {
-                    countdownEl.textContent = '';
-                }
-            };
-            
-            updateCountdown();
+      // Passe sortie
+      let output = [];
+      for (let k = 0; k < 10; k++) {
+        let sum = 0;
+        for (let j = 0; j < 30; j++) {
+          sum += hidden[j] * weightsOutput[k*30 + j];
         }
+        output[k] = sigmoid(sum);
+      }
 
-        function performAutoCheck() {
-            if (!autoMode) return;
-            
-            isDetecting = true;
-            updateStatus('checking');
-            document.getElementById('countdown').textContent = '🔍 Vérification en cours...';
-            
-            // Simuler la vérification
-            setTimeout(() => {
-                const result = generateResult();
-                displayResult(result.digit, result.confidence);
-                
-                isDetecting = false;
-                updateStatus('completed');
-                
-                // Redémarrer la surveillance après 3 secondes
-                setTimeout(() => {
-                    if (autoMode) {
-                        updateStatus('monitoring');
-                        document.getElementById('countdown').textContent = '';
-                        startAutoDetection();
-                    }
-                }, 3000);
-            }, 1500);
-        }
-
-        function generateResult() {
-            const digit = Math.floor(Math.random() * 10);
-            const confidence = (88 + Math.random() * 10).toFixed(1);
-            return { digit, confidence };
-        }
-
-        function displayResult(digit, confidence) {
-            const predEl = document.getElementById('prediction');
-            const confEl = document.getElementById('confidence');
-            
-            predEl.textContent = digit;
-            predEl.classList.remove('waiting');
-            predEl.classList.add('fade-in');
-            
-            confEl.textContent = `Confiance: ${confidence}%`;
-            confEl.classList.add('fade-in');
-            
-            // Nettoyer les animations
-            setTimeout(() => {
-                predEl.classList.remove('fade-in');
-                confEl.classList.remove('fade-in');
-            }, 500);
-        }
-
-        function toggleAuto() {
-            autoMode = !autoMode;
-            const btn = document.getElementById('autoBtn');
-            
-            if (autoMode) {
-                btn.textContent = '🤖 Auto: ON';
-                btn.classList.remove('off');
-                startAutoDetection();
-                updateStatus('monitoring');
-            } else {
-                btn.textContent = '👤 Manuel: ON';
-                btn.classList.add('off');
-                clearDetection();
-                updateStatus('manual');
-            }
-        }
-
-        function checkNow() {
-            clearDetection();
-            performAutoCheck();
-        }
-
-        function clearAll() {
-            clearDetection();
-            
-            // Réinitialiser l'affichage
-            document.getElementById('prediction').textContent = '?';
-            document.getElementById('prediction').classList.add('waiting');
-            document.getElementById('confidence').textContent = 'Dessinez un chiffre ci-dessus';
-            document.getElementById('countdown').textContent = '';
-            
-            updateStatus(autoMode ? 'monitoring' : 'manual');
-            
-            // Redémarrer la surveillance si auto mode
-            if (autoMode) {
-                setTimeout(() => {
-                    startAutoDetection();
-                }, 1000);
-            }
-        }
-
-        function clearDetection() {
-            if (detectionTimeout) {
-                clearTimeout(detectionTimeout);
-                detectionTimeout = null;
-            }
-            isDetecting = false;
-        }
-
-        function updateStatus(status) {
-            const statusBar = document.getElementById('statusBar');
-            const statusText = document.getElementById('statusText');
-            const frame = document.getElementById('ucsdFrame');
-            
-            // Retirer les classes d'animation
-            frame.classList.remove('monitoring');
-            
-            switch (status) {
-                case 'monitoring':
-                    statusBar.textContent = '🟢 Surveillance active - Dessinez pour déclencher la détection';
-                    statusText.textContent = '👀 En attente d\'activité de dessin...';
-                    frame.classList.add('monitoring');
-                    break;
-                    
-                case 'detected':
-                    statusBar.textContent = '🟡 Activité détectée - Préparation de la vérification';
-                    statusText.textContent = '🎯 Dessin détecté ! Vérification programmée...';
-                    break;
-                    
-                case 'checking':
-                    statusBar.textContent = '🔵 Vérification en cours...';
-                    statusText.textContent = '🔍 Analyse du chiffre dessiné...';
-                    break;
-                    
-                case 'completed':
-                    statusBar.textContent = '✅ Détection terminée avec succès';
-                    statusText.textContent = '🎉 Résultat affiché ! Vous pouvez dessiner à nouveau.';
-                    break;
-                    
-                case 'manual':
-                    statusBar.textContent = '👤 Mode manuel - Utilisez les contrôles';
-                    statusText.textContent = '🖱️ Cliquez "classify" dans le cadre ou "Vérifier"';
-                    break;
-                    
-                default:
-                    statusBar.textContent = '✅ Modèle UCSD chargé - 98.5% de précision';
-                    statusText.textContent = '🟢 Mode automatique activé - La détection se fait 3 secondes après avoir dessiné';
-            }
-        }
-
-        // Démo automatique
-        setTimeout(() => {
-            console.log('💡 Conseil: Dessinez dans le cadre pour voir la détection automatique !');
-            
-            // Proposer une démo après 8 secondes
-            setTimeout(() => {
-                if (autoMode && confirm('🎮 Voulez-vous voir une démonstration de la détection automatique ?')) {
-                    onDrawingDetected();
-                }
-            }, 8000);
-        }, 3000);
-    </script>
+      // Trouver la classe max
+      let prediction = output.indexOf(Math.max(...output));
+      document.getElementById("result").textContent = "Prédiction : " + prediction;
+    }
+  </script>
 </body>
 </html>
