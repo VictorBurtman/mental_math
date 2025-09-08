@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Mental Math</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="mnist_model.js"></script>
@@ -26,22 +26,13 @@
             min-height: 100vh;
             overflow-x: hidden;
             touch-action: manipulation;
+            width: 100vw;
         }
 
         .container {
-            width: 100vw;
-            max-width: 100vw;
-            margin: 0;
-            padding: 10px;
+            width: 100%;
+            padding: 15px;
             min-height: 100vh;
-        }
-
-        @media (min-width: 600px) {
-            .container {
-                max-width: 500px;
-                margin: 0 auto;
-                padding: 20px;
-            }
         }
 
         .screen {
@@ -51,12 +42,11 @@
             padding: 20px;
             margin: 10px 0;
             display: none;
-            min-height: calc(100vh - 20px);
+            min-height: calc(100vh - 50px);
         }
 
         .screen.active {
-            display: flex;
-            flex-direction: column;
+            display: block;
         }
 
         h1 {
@@ -178,42 +168,45 @@
             justify-content: center;
         }
 
-        .drawing-area {
-            text-align: center;
-            margin: 20px 0;
+        .canvas-area {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 15px;
+            margin: 25px 0;
+            padding: 0 10px;
         }
 
-        .canvas-wrapper {
-            display: inline-block;
-            margin: 0 8px;
-            text-align: center;
+        .canvas-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 0 0 auto;
         }
 
-        .canvas-wrapper label {
-            display: block;
+        .canvas-label {
             margin-bottom: 8px;
             font-size: 1em;
             color: #888;
             font-weight: 500;
         }
 
-        .digit-canvas {
+        .canvas {
             border: 2px solid #333;
             border-radius: 12px;
             background: #000;
             cursor: crosshair;
-            width: 170px;
-            height: 170px;
+            display: block;
         }
 
-        .digit-canvas.disabled {
+        .canvas.disabled {
             background: #1a1a1a;
             border-color: #222;
             cursor: not-allowed;
             opacity: 0.5;
         }
 
-        .prediction-display {
+        .prediction {
             margin-top: 8px;
             font-size: 2em;
             font-weight: 700;
@@ -232,7 +225,7 @@
             font-weight: 500;
         }
 
-        .game-controls {
+        .controls {
             display: flex;
             justify-content: center;
             margin: 16px 0;
@@ -275,7 +268,7 @@
             background: #0052a3;
         }
 
-        .result-feedback {
+        .feedback {
             font-size: 1.3em;
             font-weight: 600;
             margin: 16px 0;
@@ -288,13 +281,13 @@
             text-align: center;
         }
 
-        .result-feedback.correct {
+        .feedback.correct {
             background: #1a3d1a;
             border: 2px solid #28a745;
             color: #28a745;
         }
 
-        .result-feedback.incorrect {
+        .feedback.incorrect {
             background: #3d1a1a;
             border: 2px solid #dc3545;
             color: #dc3545;
@@ -302,10 +295,6 @@
 
         .final-screen {
             text-align: center;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
         }
 
         .final-time {
@@ -401,10 +390,6 @@
             text-align: center;
             color: #888;
         }
-
-        .spacer {
-            flex: 1;
-        }
     </style>
 </head>
 <body>
@@ -458,28 +443,26 @@
 
             <div class="operation" id="operation">3 + 5 = ?</div>
 
-            <div class="drawing-area">
-                <div class="canvas-wrapper">
-                    <label>Tens</label>
-                    <canvas class="digit-canvas" id="canvas1" width="170" height="170"></canvas>
-                    <div class="prediction-display" id="prediction1">-</div>
+            <div class="canvas-area">
+                <div class="canvas-box">
+                    <div class="canvas-label">Tens</div>
+                    <canvas class="canvas" id="canvas1" width="140" height="140"></canvas>
+                    <div class="prediction" id="prediction1">-</div>
                 </div>
-                <div class="canvas-wrapper">
-                    <label>Units</label>
-                    <canvas class="digit-canvas" id="canvas2" width="140" height="140"></canvas>
-                    <div class="prediction-display" id="prediction2">-</div>
+                <div class="canvas-box">
+                    <div class="canvas-label">Units</div>
+                    <canvas class="canvas" id="canvas2" width="140" height="140"></canvas>
+                    <div class="prediction" id="prediction2">-</div>
                 </div>
             </div>
 
             <div class="attempts" id="attempts">Attempts left: 3</div>
 
-            <div class="game-controls">
+            <div class="controls">
                 <button class="btn" id="clearBtn">🗑️ Clear</button>
             </div>
 
-            <div class="result-feedback" id="resultFeedback"></div>
-
-            <div class="spacer"></div>
+            <div class="feedback" id="feedback"></div>
         </div>
 
         <!-- Final Screen -->
@@ -508,7 +491,7 @@
                     </div>
                 </div>
 
-                <div class="game-controls">
+                <div class="controls">
                     <button class="btn primary" id="homeBtn">🏠 Home</button>
                     <button class="btn" id="playAgainBtn">🔄 Play Again</button>
                 </div>
@@ -517,12 +500,8 @@
     </div>
 
     <script>
-        // Variables globales
         let model = null;
-        let gameSettings = {
-            questions: null,
-            difficulty: null
-        };
+        let gameSettings = { questions: null, difficulty: null };
         let gameState = {
             totalQuestions: 20,
             currentQuestion: 0,
@@ -539,10 +518,8 @@
         let canvases = [];
         let contexts = [];
 
-        // Fonctions de configuration
         function selectQuestions(num) {
             gameSettings.questions = num;
-            
             document.querySelectorAll('.option-btn').forEach(btn => {
                 if (btn.id === `q${num}`) {
                     btn.classList.add('selected');
@@ -550,14 +527,12 @@
                     btn.classList.remove('selected');
                 }
             });
-            
             saveSettings();
             updateStartButton();
         }
 
         function selectDifficulty(level) {
             gameSettings.difficulty = level;
-            
             document.querySelectorAll('.option-btn').forEach(btn => {
                 if (btn.id === level) {
                     btn.classList.add('selected');
@@ -565,7 +540,6 @@
                     btn.classList.remove('selected');
                 }
             });
-            
             saveSettings();
             updateStartButton();
         }
@@ -580,30 +554,17 @@
         function loadSettings() {
             const lastQuestions = localStorage.getItem('lastQuestions');
             const lastDifficulty = localStorage.getItem('lastDifficulty');
-            
-            if (lastQuestions) {
-                selectQuestions(parseInt(lastQuestions));
-            }
-            if (lastDifficulty) {
-                selectDifficulty(lastDifficulty);
-            }
+            if (lastQuestions) selectQuestions(parseInt(lastQuestions));
+            if (lastDifficulty) selectDifficulty(lastDifficulty);
         }
 
         function updateStartButton() {
             const startBtn = document.getElementById('startBtn');
-            if (gameSettings.questions && gameSettings.difficulty) {
-                startBtn.disabled = false;
-            } else {
-                startBtn.disabled = true;
-            }
+            startBtn.disabled = !(gameSettings.questions && gameSettings.difficulty);
         }
 
-        // Canvas
         function initCanvases() {
-            canvases = [
-                document.getElementById('canvas1'),
-                document.getElementById('canvas2')
-            ];
+            canvases = [document.getElementById('canvas1'), document.getElementById('canvas2')];
             contexts = canvases.map(canvas => canvas.getContext('2d'));
 
             canvases.forEach((canvas, index) => {
@@ -626,33 +587,24 @@
 
         function startDrawing(e, canvasIndex) {
             if (canvasIndex === 0 && gameState.isSingleDigit) return;
-            
             gameState.isDrawing[canvasIndex] = true;
             const rect = canvases[canvasIndex].getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
             contexts[canvasIndex].beginPath();
             contexts[canvasIndex].moveTo(x, y);
         }
 
         function draw(e, canvasIndex) {
-            if (!gameState.isDrawing[canvasIndex]) return;
-            if (canvasIndex === 0 && gameState.isSingleDigit) return;
-            
+            if (!gameState.isDrawing[canvasIndex] || (canvasIndex === 0 && gameState.isSingleDigit)) return;
             const rect = canvases[canvasIndex].getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
             contexts[canvasIndex].lineTo(x, y);
             contexts[canvasIndex].stroke();
 
-            if (gameState.predictionTimers[canvasIndex]) {
-                clearTimeout(gameState.predictionTimers[canvasIndex]);
-            }
-            gameState.predictionTimers[canvasIndex] = setTimeout(() => {
-                predictDigit(canvasIndex);
-            }, 500);
+            if (gameState.predictionTimers[canvasIndex]) clearTimeout(gameState.predictionTimers[canvasIndex]);
+            gameState.predictionTimers[canvasIndex] = setTimeout(() => predictDigit(canvasIndex), 500);
         }
 
         function stopDrawing(canvasIndex) {
@@ -661,25 +613,19 @@
 
         function handleTouch(e, canvasIndex) {
             if (canvasIndex === 0 && gameState.isSingleDigit) return;
-            
             e.preventDefault();
             const touch = e.touches[0];
             const mouseEvent = new MouseEvent(
                 e.type === 'touchstart' ? 'mousedown' : 'mousemove',
-                {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                }
+                { clientX: touch.clientX, clientY: touch.clientY }
             );
             canvases[canvasIndex].dispatchEvent(mouseEvent);
         }
 
         async function predictDigit(canvasIndex) {
             if (!model) return;
-
             try {
                 const canvas = canvases[canvasIndex];
-                
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = 28;
                 tempCanvas.height = 28;
@@ -688,7 +634,6 @@
 
                 const imageData = tempCtx.getImageData(0, 0, 28, 28);
                 const pixels = imageData.data;
-
                 const grayscale = [];
                 for (let i = 0; i < pixels.length; i += 4) {
                     grayscale.push(pixels[i] / 255.0);
@@ -697,16 +642,13 @@
                 const inputTensor = tf.tensor4d(grayscale, [1, 28, 28, 1]);
                 const prediction = model.predict(inputTensor);
                 const probabilities = await prediction.data();
-                
                 const predictedDigit = probabilities.indexOf(Math.max(...probabilities));
                 
                 document.getElementById(`prediction${canvasIndex + 1}`).textContent = predictedDigit;
-
                 checkAnswer();
 
                 inputTensor.dispose();
                 prediction.dispose();
-
             } catch (error) {
                 console.error('Prediction error:', error);
             }
@@ -716,7 +658,6 @@
             canvases.forEach((canvas, index) => {
                 contexts[index].fillStyle = 'black';
                 contexts[index].fillRect(0, 0, canvas.width, canvas.height);
-                
                 if (gameState.predictionTimers[index]) {
                     clearTimeout(gameState.predictionTimers[index]);
                     gameState.predictionTimers[index] = null;
@@ -733,11 +674,10 @@
                 document.getElementById('prediction2').textContent = '-';
             }
             
-            document.getElementById('resultFeedback').textContent = '';
-            document.getElementById('resultFeedback').className = 'result-feedback';
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
         }
 
-        // Génération des opérations
         function generateOperations(count, difficulty) {
             const operations = [];
             let lastOperation = null;
@@ -745,7 +685,6 @@
             for (let i = 0; i < count; i++) {
                 let operation = null;
                 let attempts = 0;
-                const maxAttempts = 50;
                 
                 do {
                     const type = Math.floor(Math.random() * 3);
@@ -764,9 +703,7 @@
                                 b = Math.floor(Math.random() * 100) + 1;
                             }
                             result = a + b;
-                            if (result <= 99) {
-                                operation = { a, b, op: '+', result };
-                            }
+                            if (result <= 99) operation = { a, b, op: '+', result };
                             break;
                             
                         case 1: // Soustraction
@@ -793,14 +730,10 @@
                     }
                     
                     attempts++;
-                } while (
-                    (operation === null || 
-                     (lastOperation && 
-                      operation.a === lastOperation.a && 
-                      operation.b === lastOperation.b && 
-                      operation.op === lastOperation.op)) &&
-                    attempts < maxAttempts
-                );
+                } while ((operation === null || 
+                         (lastOperation && operation.a === lastOperation.a && 
+                          operation.b === lastOperation.b && operation.op === lastOperation.op)) &&
+                         attempts < 50);
                 
                 if (operation) {
                     operations.push(operation);
@@ -809,7 +742,6 @@
                     i--;
                 }
             }
-            
             return operations;
         }
 
@@ -819,61 +751,39 @@
             
             if (gameState.isSingleDigit) {
                 if (pred2 === '-') return;
-                
                 const userAnswer = parseInt(pred2);
                 const correctAnswer = gameState.operations[gameState.currentQuestion].result;
-                
-                const feedbackEl = document.getElementById('resultFeedback');
+                const feedbackEl = document.getElementById('feedback');
                 
                 if (userAnswer === correctAnswer) {
                     feedbackEl.textContent = '✓ Correct!';
-                    feedbackEl.className = 'result-feedback correct';
+                    feedbackEl.className = 'feedback correct';
                     gameState.correctAnswers++;
-                    
-                    setTimeout(() => {
-                        nextQuestion();
-                    }, 800);
+                    setTimeout(nextQuestion, 800);
                 } else {
                     feedbackEl.textContent = '✗ Incorrect';
-                    feedbackEl.className = 'result-feedback incorrect';
-                    
+                    feedbackEl.className = 'feedback incorrect';
                     gameState.attempts--;
                     document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
-                    
-                    if (gameState.attempts === 0) {
-                        setTimeout(() => {
-                            nextQuestionAfterFailure();
-                        }, 1500);
-                    }
+                    if (gameState.attempts === 0) setTimeout(nextQuestionAfterFailure, 1500);
                 }
             } else {
                 if (pred1 === '-' || pred2 === '-') return;
-                
                 const userAnswer = parseInt(pred1) * 10 + parseInt(pred2);
                 const correctAnswer = gameState.operations[gameState.currentQuestion].result;
-                
-                const feedbackEl = document.getElementById('resultFeedback');
+                const feedbackEl = document.getElementById('feedback');
                 
                 if (userAnswer === correctAnswer) {
                     feedbackEl.textContent = '✓ Correct!';
-                    feedbackEl.className = 'result-feedback correct';
+                    feedbackEl.className = 'feedback correct';
                     gameState.correctAnswers++;
-                    
-                    setTimeout(() => {
-                        nextQuestion();
-                    }, 800);
+                    setTimeout(nextQuestion, 800);
                 } else {
                     feedbackEl.textContent = '✗ Incorrect';
-                    feedbackEl.className = 'result-feedback incorrect';
-                    
+                    feedbackEl.className = 'feedback incorrect';
                     gameState.attempts--;
                     document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
-                    
-                    if (gameState.attempts === 0) {
-                        setTimeout(() => {
-                            nextQuestionAfterFailure();
-                        }, 1500);
-                    }
+                    if (gameState.attempts === 0) setTimeout(nextQuestionAfterFailure, 1500);
                 }
             }
         }
@@ -904,7 +814,6 @@
                 `Question ${gameState.currentQuestion + 1}/${gameState.totalQuestions}`;
             
             gameState.isSingleDigit = question.result < 10;
-            
             const canvas1 = document.getElementById('canvas1');
             
             if (gameState.isSingleDigit) {
@@ -927,7 +836,6 @@
         function saveBestTime(questions, difficulty, time) {
             const key = `bestTime_${questions}_${difficulty}`;
             const currentBest = localStorage.getItem(key);
-            
             if (!currentBest || time < parseInt(currentBest)) {
                 localStorage.setItem(key, time.toString());
                 return true;
@@ -962,9 +870,7 @@
         }
 
         function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
             document.getElementById(screenId).classList.add('active');
         }
 
@@ -981,9 +887,7 @@
             displayQuestion();
             clearCanvases();
             
-            if (gameState.timerInterval) {
-                clearInterval(gameState.timerInterval);
-            }
+            if (gameState.timerInterval) clearInterval(gameState.timerInterval);
             gameState.timerInterval = setInterval(updateTimer, 1000);
         }
 
