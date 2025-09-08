@@ -179,7 +179,10 @@
 
         .canvas-container {
             text-align: center;
-            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 180px;
         }
 
         .canvas-container label {
@@ -406,7 +409,7 @@
         <!-- Home Screen -->
         <div id="homeScreen" class="screen active">
             <h1>Mental Math</h1>
-            <h2>by Prout Prout</h2>
+            <h2>by Victor Burtman</h2>
             
             <div id="status" class="status" style="display: none;">
                 <span class="loading"></span> Loading model...
