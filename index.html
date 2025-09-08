@@ -928,9 +928,10 @@
         async function loadModel() {
             try {
                 console.log('Loading MNIST model...');
+                document.getElementById('status').style.display = 'block';
                 model = await loadMNISTModel();
                 
-                document.getElementById('status').innerHTML = 'Model loaded! Select your settings.';
+                document.getElementById('status').style.display = 'none';
                 document.getElementById('setupArea').style.display = 'block';
                 
                 console.log('Model loaded successfully');
@@ -938,6 +939,7 @@
             } catch (error) {
                 console.error('Error loading model:', error);
                 document.getElementById('status').innerHTML = `Error: ${error.message}`;
+                document.getElementById('status').style.display = 'block';
             }
         }
 
