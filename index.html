@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Mental Math</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="mnist_model.js"></script>
@@ -29,20 +29,29 @@
         }
 
         .container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
+            width: 100vw;
+            max-width: 100vw;
+            margin: 0;
+            padding: 10px;
             min-height: 100vh;
+        }
+
+        @media (min-width: 600px) {
+            .container {
+                max-width: 500px;
+                margin: 0 auto;
+                padding: 20px;
+            }
         }
 
         .screen {
             background: #1a1a1a;
             border: 1px solid #333;
             border-radius: 16px;
-            padding: 24px;
-            margin: 16px 0;
+            padding: 20px;
+            margin: 10px 0;
             display: none;
-            min-height: calc(100vh - 40px);
+            min-height: calc(100vh - 20px);
         }
 
         .screen.active {
@@ -52,7 +61,7 @@
 
         h1 {
             color: #ffffff;
-            font-size: 2.2em;
+            font-size: 2em;
             margin-bottom: 16px;
             text-align: center;
             font-weight: 700;
@@ -67,7 +76,7 @@
         }
 
         .setup-section {
-            margin-bottom: 32px;
+            margin-bottom: 30px;
         }
 
         .setup-title {
@@ -81,7 +90,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .option-btn {
@@ -117,7 +126,7 @@
             font-size: 1.1em;
             cursor: pointer;
             width: 100%;
-            margin-top: 24px;
+            margin-top: 20px;
             font-weight: 600;
             transition: background 0.2s ease;
         }
@@ -137,12 +146,12 @@
             align-items: center;
             margin-bottom: 16px;
             background: #2a2a2a;
-            padding: 16px;
+            padding: 14px;
             border-radius: 12px;
         }
 
         .question-counter, .timer {
-            font-size: 1.1em;
+            font-size: 1em;
             font-weight: 600;
             color: #fff;
         }
@@ -155,13 +164,12 @@
             border-radius: 8px;
             font-size: 0.9em;
             cursor: pointer;
-            order: -1;
         }
 
         .operation {
-            font-size: 2.8em;
+            font-size: 2.5em;
             font-weight: 700;
-            margin: 16px 0;
+            margin: 20px 0;
             text-align: center;
             color: #fff;
             min-height: 60px;
@@ -171,21 +179,17 @@
         }
 
         .drawing-area {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+            text-align: center;
             margin: 20px 0;
         }
 
-        .canvas-container {
+        .canvas-wrapper {
+            display: inline-block;
+            margin: 0 8px;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 180px;
         }
 
-        .canvas-container label {
+        .canvas-wrapper label {
             display: block;
             margin-bottom: 8px;
             font-size: 1em;
@@ -198,9 +202,8 @@
             border-radius: 12px;
             background: #000;
             cursor: crosshair;
-            width: 100%;
-            max-width: 180px;
-            height: 180px;
+            width: 170px;
+            height: 170px;
         }
 
         .digit-canvas.disabled {
@@ -212,10 +215,10 @@
 
         .prediction-display {
             margin-top: 8px;
-            font-size: 2.2em;
+            font-size: 2em;
             font-weight: 700;
             color: #0066cc;
-            min-height: 45px;
+            min-height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -273,7 +276,7 @@
         }
 
         .result-feedback {
-            font-size: 1.4em;
+            font-size: 1.3em;
             font-weight: 600;
             margin: 16px 0;
             padding: 12px;
@@ -306,14 +309,14 @@
         }
 
         .final-time {
-            font-size: 3em;
+            font-size: 2.5em;
             color: #0066cc;
-            margin: 24px 0;
+            margin: 20px 0;
             font-weight: 700;
         }
 
         .best-time {
-            font-size: 1.3em;
+            font-size: 1.2em;
             color: #28a745;
             margin: 16px 0;
             font-weight: 600;
@@ -323,7 +326,7 @@
             background: #2a2a2a;
             border-radius: 12px;
             padding: 20px;
-            margin: 24px 0;
+            margin: 20px 0;
         }
 
         .stats h3 {
@@ -349,7 +352,7 @@
         }
 
         .stat-value {
-            font-size: 1.4em;
+            font-size: 1.3em;
             font-weight: 700;
             color: #0066cc;
         }
@@ -456,14 +459,14 @@
             <div class="operation" id="operation">3 + 5 = ?</div>
 
             <div class="drawing-area">
-                <div style="display: inline-block; width: 180px; text-align: center;">
+                <div class="canvas-wrapper">
                     <label>Tens</label>
-                    <canvas class="digit-canvas" id="canvas1" width="180" height="180" style="width: 180px !important; height: 180px !important;"></canvas>
+                    <canvas class="digit-canvas" id="canvas1" width="170" height="170"></canvas>
                     <div class="prediction-display" id="prediction1">-</div>
                 </div>
-                <div style="display: inline-block; width: 180px; text-align: center; margin-left: 5px;">
+                <div class="canvas-wrapper">
                     <label>Units</label>
-                    <canvas class="digit-canvas" id="canvas2" width="180" height="180" style="width: 180px !important; height: 180px !important;"></canvas>
+                    <canvas class="digit-canvas" id="canvas2" width="170" height="170"></canvas>
                     <div class="prediction-display" id="prediction2">-</div>
                 </div>
             </div>
@@ -939,162 +942,4 @@
             }
         }
 
-        function updateTimer() {
-            if (document.getElementById('gameScreen').classList.contains('active')) {
-                const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60);
-                const seconds = elapsed % 60;
-                document.getElementById('timer').textContent = 
-                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }
-
-        function saveBestTime(questions, difficulty, time) {
-            const key = `bestTime_${questions}_${difficulty}`;
-            const currentBest = localStorage.getItem(key);
-            
-            if (!currentBest || time < parseInt(currentBest)) {
-                localStorage.setItem(key, time.toString());
-                return true;
-            }
-            return false;
-        }
-
-        function loadBestTimes() {
-            const difficulties = ['easy', 'medium', 'hard'];
-            const questions = [20, 50, 100];
-            const container = document.getElementById('bestTimesGrid');
-            container.innerHTML = '';
-            
-            difficulties.forEach(diff => {
-                questions.forEach(q => {
-                    const bestTime = localStorage.getItem(`bestTime_${q}_${diff}`);
-                    if (bestTime) {
-                        const minutes = Math.floor(bestTime / 60);
-                        const seconds = bestTime % 60;
-                        const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                        
-                        const item = document.createElement('div');
-                        item.className = 'best-time-item';
-                        item.innerHTML = `
-                            <span>${q} questions (${diff})</span>
-                            <span class="best-time-value">${timeStr}</span>
-                        `;
-                        container.appendChild(item);
-                    }
-                });
-            });
-        }
-
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            document.getElementById(screenId).classList.add('active');
-        }
-
-        function startGame() {
-            gameState.totalQuestions = gameSettings.questions;
-            gameState.currentQuestion = 0;
-            gameState.correctAnswers = 0;
-            gameState.failedQuestions = 0;
-            gameState.attempts = 3;
-            gameState.operations = generateOperations(gameSettings.questions, gameSettings.difficulty);
-            gameState.startTime = Date.now();
-            
-            showScreen('gameScreen');
-            displayQuestion();
-            clearCanvases();
-            
-            if (gameState.timerInterval) {
-                clearInterval(gameState.timerInterval);
-            }
-            gameState.timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function endGame() {
-            if (gameState.timerInterval) {
-                clearInterval(gameState.timerInterval);
-                gameState.timerInterval = null;
-            }
-
-            const totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
-            const penalty = gameState.failedQuestions * 5;
-            const finalTime = totalTime + penalty;
-            
-            const minutes = Math.floor(finalTime / 60);
-            const seconds = finalTime % 60;
-            document.getElementById('finalTime').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            document.getElementById('correctAnswers').textContent = gameState.correctAnswers;
-            document.getElementById('failedQuestions').textContent = gameState.failedQuestions;
-            document.getElementById('timePenalty').textContent = `${penalty}s`;
-            
-            const isNewRecord = saveBestTime(gameSettings.questions, gameSettings.difficulty, finalTime);
-            document.getElementById('finalBestTime').textContent = 
-                isNewRecord ? 'New record!' : '';
-            
-            loadBestTimes();
-            showScreen('finalScreen');
-        }
-
-        function quitGame() {
-            if (confirm('Are you sure you want to quit the game?')) {
-                if (gameState.timerInterval) {
-                    clearInterval(gameState.timerInterval);
-                    gameState.timerInterval = null;
-                }
-                goHome();
-            }
-        }
-
-        function goHome() {
-            loadBestTimes();
-            showScreen('homeScreen');
-        }
-
-        function restartGame() {
-            startGame();
-        }
-
-        async function loadModel() {
-            try {
-                console.log('Loading MNIST model...');
-                document.getElementById('status').style.display = 'block';
-                
-                if (typeof loadMNISTModel === 'function') {
-                    model = await loadMNISTModel();
-                    console.log('Model loaded successfully');
-                } else {
-                    throw new Error('loadMNISTModel function not found. Please include mnist_model.js');
-                }
-                
-                document.getElementById('status').style.display = 'none';
-                
-            } catch (error) {
-                console.error('Error loading model:', error);
-                document.getElementById('status').innerHTML = `Error: ${error.message}`;
-                document.getElementById('status').style.display = 'block';
-                
-                document.getElementById('startBtn').disabled = true;
-                document.querySelectorAll('.option-btn').forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                });
-            }
-        }
-
-        // Initialisation
-        window.addEventListener('load', () => {
-            initEventListeners();
-            initCanvases();
-            loadModel();
-            loadBestTimes();
-            loadSettings();
-        });
-
-        console.log('Mental Math application initialized');
-    </script>
-</body>
-</html>
+        function update
