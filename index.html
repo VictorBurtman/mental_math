@@ -396,16 +396,16 @@
     <div class="container">
         <!-- Home Screen -->
         <div id="homeScreen" class="screen active">
-            <h1>Mental Math</h1>
-            <h2>by Victor Burtman</h2>
+            <h1 id="title">Mental Math</h1>
+            <h2 id="author">by Victor Burtman</h2>
             
             <div id="status" class="status" style="display: none;">
-                <span class="loading"></span> Loading model...
+                <span class="loading"></span> <span id="loadingText">Loading model...</span>
             </div>
             
             <div id="setupArea">
                 <div class="setup-section">
-                    <div class="setup-title">Number of Questions</div>
+                    <div class="setup-title" id="questionsTitle">Number of Questions</div>
                     <div class="button-grid">
                         <button class="option-btn" id="q20">20</button>
                         <button class="option-btn" id="q50">50</button>
@@ -414,7 +414,7 @@
                 </div>
 
                 <div class="setup-section">
-                    <div class="setup-title">Difficulty Level</div>
+                    <div class="setup-title" id="difficultyTitle">Difficulty Level</div>
                     <div class="button-grid">
                         <button class="option-btn" id="easy">Easy</button>
                         <button class="option-btn" id="medium">Medium</button>
@@ -426,7 +426,7 @@
             </div>
             
             <div class="stats">
-                <h3>Best Times</h3>
+                <h3 id="bestTimesTitle">Best Times</h3>
                 <div class="best-times-grid" id="bestTimesGrid">
                     <!-- Best times will be populated here -->
                 </div>
@@ -445,12 +445,12 @@
 
             <div class="canvas-area">
                 <div class="canvas-box">
-                    <div class="canvas-label">Tens</div>
+                    <div class="canvas-label" id="tensLabel">Tens</div>
                     <canvas class="canvas" id="canvas1" width="140" height="140"></canvas>
                     <div class="prediction" id="prediction1">-</div>
                 </div>
                 <div class="canvas-box">
-                    <div class="canvas-label">Units</div>
+                    <div class="canvas-label" id="unitsLabel">Units</div>
                     <canvas class="canvas" id="canvas2" width="140" height="140"></canvas>
                     <div class="prediction" id="prediction2">-</div>
                 </div>
@@ -468,24 +468,24 @@
         <!-- Final Screen -->
         <div id="finalScreen" class="screen">
             <div class="final-screen">
-                <h1>Game Complete!</h1>
+                <h1 id="completeTitle">Game Complete!</h1>
                 
                 <div class="final-time" id="finalTime">03:45</div>
                 <div class="best-time" id="finalBestTime">New record!</div>
                 
                 <div class="stats">
-                    <h3>Game Summary</h3>
+                    <h3 id="summaryTitle">Game Summary</h3>
                     <div class="stats-grid">
                         <div class="stat-item">
-                            <span>Correct answers</span>
+                            <span id="correctLabel">Correct answers</span>
                             <span class="stat-value" id="correctAnswers">15</span>
                         </div>
                         <div class="stat-item">
-                            <span>Failed questions</span>
+                            <span id="failedLabel">Failed questions</span>
                             <span class="stat-value" id="failedQuestions">5</span>
                         </div>
                         <div class="stat-item">
-                            <span>Time penalty</span>
+                            <span id="penaltyLabel">Time penalty</span>
                             <span class="stat-value" id="timePenalty">25s</span>
                         </div>
                     </div>
@@ -500,6 +500,111 @@
     </div>
 
     <script>
+        // Traductions
+        const translations = {
+            en: {
+                title: "Mental Math",
+                author: "by Victor Burtman",
+                loading: "Loading model...",
+                questions: "Number of Questions",
+                difficulty: "Difficulty Level",
+                easy: "Easy",
+                medium: "Medium", 
+                hard: "Hard",
+                start: "Start Game",
+                quit: "Quit",
+                question: "Question",
+                tens: "Tens",
+                units: "Units",
+                attempts: "Attempts left:",
+                clear: "Clear",
+                correct: "Correct!",
+                incorrect: "Incorrect",
+                complete: "Game Complete!",
+                newRecord: "New record!",
+                summary: "Game Summary",
+                correctAnswers: "Correct answers",
+                failedQuestions: "Failed questions", 
+                timePenalty: "Time penalty",
+                home: "Home",
+                playAgain: "Play Again",
+                bestTimes: "Best Times",
+                quitConfirm: "Are you sure you want to quit the game?"
+            },
+            fr: {
+                title: "Calcul Mental",
+                author: "par Victor Burtman",
+                loading: "Chargement du modèle...",
+                questions: "Nombre de Questions",
+                difficulty: "Niveau de Difficulté",
+                easy: "Facile",
+                medium: "Moyen",
+                hard: "Difficile", 
+                start: "Commencer",
+                quit: "Quitter",
+                question: "Question",
+                tens: "Dizaines",
+                units: "Unités",
+                attempts: "Essais restants :",
+                clear: "Effacer",
+                correct: "Correct !",
+                incorrect: "Incorrect",
+                complete: "Partie terminée !",
+                newRecord: "Nouveau record !",
+                summary: "Résumé de la partie",
+                correctAnswers: "Bonnes réponses",
+                failedQuestions: "Questions échouées",
+                timePenalty: "Pénalité de temps", 
+                home: "Accueil",
+                playAgain: "Rejouer",
+                bestTimes: "Meilleurs Temps",
+                quitConfirm: "Êtes-vous sûr de vouloir quitter la partie ?"
+            }
+        };
+
+        // Détection de la langue plus robuste
+        let currentLang = 'en';
+        const userLanguage = navigator.language || navigator.userLanguage || navigator.browserLanguage || navigator.systemLanguage;
+        console.log('Detected language:', userLanguage);
+        
+        if (userLanguage && (userLanguage.toLowerCase().startsWith('fr') || userLanguage.toLowerCase().includes('fr'))) {
+            currentLang = 'fr';
+            console.log('Using French language');
+        } else {
+            console.log('Using English language');
+        }
+
+        function t(key) {
+            return translations[currentLang][key] || translations.en[key] || key;
+        }
+
+        function updateTexts() {
+            document.getElementById('title').textContent = t('title');
+            document.getElementById('author').textContent = t('author');
+            document.getElementById('loadingText').textContent = t('loading');
+            document.getElementById('questionsTitle').textContent = t('questions');
+            document.getElementById('difficultyTitle').textContent = t('difficulty');
+            document.getElementById('easy').textContent = t('easy');
+            document.getElementById('medium').textContent = t('medium');
+            document.getElementById('hard').textContent = t('hard');
+            document.getElementById('startBtn').textContent = t('start');
+            document.getElementById('quitBtn').textContent = t('quit');
+            document.getElementById('tensLabel').textContent = t('tens');
+            document.getElementById('unitsLabel').textContent = t('units');
+            document.getElementById('clearBtn').innerHTML = '🗑️ ' + t('clear');
+            document.getElementById('bestTimesTitle').textContent = t('bestTimes');
+            document.getElementById('completeTitle').textContent = t('complete');
+            document.getElementById('summaryTitle').textContent = t('summary');
+            document.getElementById('correctLabel').textContent = t('correctAnswers');
+            document.getElementById('failedLabel').textContent = t('failedQuestions');
+            document.getElementById('penaltyLabel').textContent = t('timePenalty');
+            document.getElementById('homeBtn').innerHTML = '🏠 ' + t('home');
+            document.getElementById('playAgainBtn').innerHTML = '🔄 ' + t('playAgain');
+            
+            // Mettre à jour le texte des tentatives
+            document.getElementById('attempts').textContent = t('attempts') + ' 5';
+        }
+
         let model = null;
         let gameSettings = { questions: null, difficulty: null };
         let gameState = {
@@ -508,7 +613,8 @@
             correctAnswers: 0,
             failedQuestions: 0,
             startTime: 0,
-            attempts: 3,
+            attempts: 5,
+            maxAttempts: 5,
             operations: [],
             isDrawing: [false, false],
             predictionTimers: [null, null],
@@ -756,16 +862,24 @@
                 const feedbackEl = document.getElementById('feedback');
                 
                 if (userAnswer === correctAnswer) {
-                    feedbackEl.textContent = '✓ Correct!';
+                    feedbackEl.textContent = '✓ ' + t('correct');
                     feedbackEl.className = 'feedback correct';
                     gameState.correctAnswers++;
                     setTimeout(nextQuestion, 800);
                 } else {
-                    feedbackEl.textContent = '✗ Incorrect';
+                    feedbackEl.textContent = '✗ ' + t('incorrect');
                     feedbackEl.className = 'feedback incorrect';
                     gameState.attempts--;
-                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
-                    if (gameState.attempts === 0) setTimeout(nextQuestionAfterFailure, 1500);
+                    document.getElementById('attempts').textContent = t('attempts') + ' ' + gameState.attempts;
+                    
+                    // Clear automatique après erreur avec délai
+                    setTimeout(() => {
+                        clearCanvases();
+                    }, 1200);
+                    
+                    if (gameState.attempts === 0) {
+                        setTimeout(nextQuestionAfterFailure, 2000);
+                    }
                 }
             } else {
                 if (pred1 === '-' || pred2 === '-') return;
@@ -774,23 +888,31 @@
                 const feedbackEl = document.getElementById('feedback');
                 
                 if (userAnswer === correctAnswer) {
-                    feedbackEl.textContent = '✓ Correct!';
+                    feedbackEl.textContent = '✓ ' + t('correct');
                     feedbackEl.className = 'feedback correct';
                     gameState.correctAnswers++;
                     setTimeout(nextQuestion, 800);
                 } else {
-                    feedbackEl.textContent = '✗ Incorrect';
+                    feedbackEl.textContent = '✗ ' + t('incorrect');
                     feedbackEl.className = 'feedback incorrect';
                     gameState.attempts--;
-                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
-                    if (gameState.attempts === 0) setTimeout(nextQuestionAfterFailure, 1500);
+                    document.getElementById('attempts').textContent = t('attempts') + ' ' + gameState.attempts;
+                    
+                    // Clear automatique après erreur avec délai
+                    setTimeout(() => {
+                        clearCanvases();
+                    }, 1200);
+                    
+                    if (gameState.attempts === 0) {
+                        setTimeout(nextQuestionAfterFailure, 2000);
+                    }
                 }
             }
         }
 
         function nextQuestion() {
             gameState.currentQuestion++;
-            gameState.attempts = 3;
+            gameState.attempts = gameState.maxAttempts; // Reset à 5
             
             if (gameState.currentQuestion >= gameState.totalQuestions) {
                 endGame();
@@ -799,7 +921,7 @@
             
             displayQuestion();
             clearCanvases();
-            document.getElementById('attempts').textContent = 'Attempts left: 3';
+            document.getElementById('attempts').textContent = t('attempts') + ' ' + gameState.attempts;
         }
 
         function nextQuestionAfterFailure() {
@@ -811,7 +933,7 @@
             const question = gameState.operations[gameState.currentQuestion];
             document.getElementById('operation').textContent = `${question.a} ${question.op} ${question.b} = ?`;
             document.getElementById('questionCounter').textContent = 
-                `Question ${gameState.currentQuestion + 1}/${gameState.totalQuestions}`;
+                `${t('question')} ${gameState.currentQuestion + 1}/${gameState.totalQuestions}`;
             
             gameState.isSingleDigit = question.result < 10;
             const canvas1 = document.getElementById('canvas1');
@@ -879,7 +1001,7 @@
             gameState.currentQuestion = 0;
             gameState.correctAnswers = 0;
             gameState.failedQuestions = 0;
-            gameState.attempts = 3;
+            gameState.attempts = gameState.maxAttempts; // 5 tentatives
             gameState.operations = generateOperations(gameSettings.questions, gameSettings.difficulty);
             gameState.startTime = Date.now();
             
@@ -912,14 +1034,14 @@
             
             const isNewRecord = saveBestTime(gameSettings.questions, gameSettings.difficulty, finalTime);
             document.getElementById('finalBestTime').textContent = 
-                isNewRecord ? 'New record!' : '';
+                isNewRecord ? t('newRecord') : '';
             
             loadBestTimes();
             showScreen('finalScreen');
         }
 
         function quitGame() {
-            if (confirm('Are you sure you want to quit the game?')) {
+            if (confirm(t('quitConfirm'))) {
                 if (gameState.timerInterval) {
                     clearInterval(gameState.timerInterval);
                     gameState.timerInterval = null;
@@ -964,6 +1086,7 @@
 
         // Initialisation
         window.addEventListener('load', () => {
+            updateTexts(); // Appliquer les traductions en premier
             initCanvases();
             loadModel();
             loadBestTimes();
