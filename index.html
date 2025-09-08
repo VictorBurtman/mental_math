@@ -409,7 +409,7 @@
         <!-- Home Screen -->
         <div id="homeScreen" class="screen active">
             <h1>Mental Math</h1>
-            <h2>by Victor Burtman 33</h2>
+            <h2>by Victor Burtman</h2>
             
             <div id="status" class="status" style="display: none;">
                 <span class="loading"></span> Loading model...
@@ -456,19 +456,15 @@
             <div class="operation" id="operation">3 + 5 = ?</div>
 
             <div class="drawing-area">
-                <div class="canvas-row">
-                    <div class="canvas-container">
-                        <label>Tens</label>
-                        <canvas class="digit-canvas" id="canvas1" width="180" height="180"></canvas>
-                        <div class="prediction-display" id="prediction1">-</div>
-                    </div>
+                <div class="canvas-container">
+                    <label>Tens</label>
+                    <canvas class="digit-canvas" id="canvas1" width="180" height="180"></canvas>
+                    <div class="prediction-display" id="prediction1">-</div>
                 </div>
-                <div class="canvas-row">
-                    <div class="canvas-container">
-                        <label>Units</label>
-                        <canvas class="digit-canvas" id="canvas2" width="180" height="180"></canvas>
-                        <div class="prediction-display" id="prediction2">-</div>
-                    </div>
+                <div class="canvas-container">
+                    <label>Units</label>
+                    <canvas class="digit-canvas" id="canvas2" width="180" height="180"></canvas>
+                    <div class="prediction-display" id="prediction2">-</div>
                 </div>
             </div>
 
