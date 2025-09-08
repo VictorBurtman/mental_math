@@ -53,10 +53,10 @@
 
         h2 {
             color: #888;
-            font-size: 1.4em;
+            font-size: 0.9em;
             margin-bottom: 24px;
             text-align: center;
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .setup-section {
@@ -729,7 +729,7 @@
             for (let i = 0; i < count; i++) {
                 let operation = null;
                 let attempts = 0;
-                const maxAttempts = 50; // Éviter les boucles infinies
+                const maxAttempts = 50;
                 
                 do {
                     const type = Math.floor(Math.random() * 3); // 0: +, 1: -, 2: *
@@ -790,8 +790,49 @@
                     operations.push(operation);
                     lastOperation = operation;
                 } else {
-                    // Si on n'arrive pas à générer une opération différente, on prend n'importe laquelle
-                    i--;
+                    // Si on n'arrive pas à générer une opération différente, prendre n'importe laquelle
+                    const type = Math.floor(Math.random() * 3);
+                    let a, b, result;
+                    
+                    if (type === 0) { // Addition
+                        if (difficulty === 'easy') {
+                            a = Math.floor(Math.random() * 15) + 1;
+                            b = Math.floor(Math.random() * 15) + 1;
+                        } else if (difficulty === 'medium') {
+                            a = Math.floor(Math.random() * 50) + 1;
+                            b = Math.floor(Math.random() * 50) + 1;
+                        } else {
+                            a = Math.floor(Math.random() * 100) + 1;
+                            b = Math.floor(Math.random() * 100) + 1;
+                        }
+                        result = a + b;
+                        if (result <= 99) {
+                            operations.push({ a, b, op: '+', result });
+                            lastOperation = { a, b, op: '+', result };
+                        } else {
+                            i--;
+                        }
+                    } else if (type === 1) { // Soustraction
+                        if (difficulty === 'easy') {
+                            a = Math.floor(Math.random() * 15) + 1;
+                            b = Math.floor(Math.random() * a) + 1;
+                        } else if (difficulty === 'medium') {
+                            a = Math.floor(Math.random() * 50) + 1;
+                            b = Math.floor(Math.random() * a) + 1;
+                        } else {
+                            a = Math.floor(Math.random() * 100) + 1;
+                            b = Math.floor(Math.random() * a) + 1;
+                        }
+                        result = a - b;
+                        operations.push({ a, b, op: '-', result });
+                        lastOperation = { a, b, op: '-', result };
+                    } else { // Multiplication
+                        a = Math.floor(Math.random() * 9) + 1;
+                        b = Math.floor(Math.random() * 9) + 1;
+                        result = a * b;
+                        operations.push({ a, b, op: '×', result });
+                        lastOperation = { a, b, op: '×', result };
+                    }
                 }
             }
             
@@ -807,37 +848,6 @@
                 if (pred2 === '-') return;
                 
                 const userAnswer = parseInt(pred2);
-                const correctAnswer = gameState.operations[gameState.currentQuestion].result;
-                
-                const feedbackEl = document.getElementById('resultFeedback');
-                
-                if (userAnswer === correctAnswer) {
-                    feedbackEl.textContent = '✓ Correct!';
-                    feedbackEl.className = 'result-feedback correct';
-                    gameState.correctAnswers++;
-                    
-                    setTimeout(() => {
-                        nextQuestion();
-                    }, 1500);
-                } else {
-                    feedbackEl.textContent = '✗ Incorrect';
-                    feedbackEl.className = 'result-feedback incorrect';
-                    
-                    gameState.attempts--;
-                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
-                    
-                    if (gameState.attempts === 0) {
-                        setTimeout(() => {
-                            skipQuestion();
-                        }, 2000);
-                    }
-                }
-            } else {
-                // Pour les résultats à 2 chiffres, on vérifie les deux canvas
-                if (pred1 === '-' || pred2 === '-') return;
-                if (pred1 === '0' && gameState.isSingleDigit) return; // Éviter la vérification prématurée
-                
-                const userAnswer = parseInt(pred1) * 10 + parseInt(pred2);
                 const correctAnswer = gameState.operations[gameState.currentQuestion].result;
                 
                 const feedbackEl = document.getElementById('resultFeedback');
@@ -1070,4 +1080,35 @@
         console.log('Mental Math application initialized');
     </script>
 </body>
-</html>
+</html>attempts === 0) {
+                        setTimeout(() => {
+                            skipQuestion();
+                        }, 2000);
+                    }
+                }
+            } else {
+                // Pour les résultats à 2 chiffres, on vérifie les deux canvas
+                if (pred1 === '-' || pred2 === '-') return;
+                if (pred1 === '0' && gameState.isSingleDigit) return;
+                
+                const userAnswer = parseInt(pred1) * 10 + parseInt(pred2);
+                const correctAnswer = gameState.operations[gameState.currentQuestion].result;
+                
+                const feedbackEl = document.getElementById('resultFeedback');
+                
+                if (userAnswer === correctAnswer) {
+                    feedbackEl.textContent = '✓ Correct!';
+                    feedbackEl.className = 'result-feedback correct';
+                    gameState.correctAnswers++;
+                    
+                    setTimeout(() => {
+                        nextQuestion();
+                    }, 1500);
+                } else {
+                    feedbackEl.textContent = '✗ Incorrect';
+                    feedbackEl.className = 'result-feedback incorrect';
+                    
+                    gameState.attempts--;
+                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
+                    
+                    if (gameState.
