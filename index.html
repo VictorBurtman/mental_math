@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mental Math - Handwriting Recognition</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script src="mnist_model.js"></script>
@@ -190,6 +190,13 @@
             width: 100%;
             max-width: 140px;
             height: 140px;
+        }
+
+        .digit-canvas.disabled {
+            background: #1a1a1a;
+            border-color: #222;
+            cursor: not-allowed;
+            opacity: 0.5;
         }
 
         .prediction-display {
@@ -388,13 +395,13 @@
         <!-- Home Screen -->
         <div id="homeScreen" class="screen active">
             <h1>Mental Math</h1>
-            <h2>Handwriting Recognition</h2>
+            <h2>by Victor Burtman</h2>
             
-            <div id="status" class="status">
+            <div id="status" class="status" style="display: none;">
                 <span class="loading"></span> Loading model...
             </div>
             
-            <div id="setupArea" style="display: none;">
+            <div id="setupArea">
                 <div class="setup-section">
                     <div class="setup-title">Number of Questions</div>
                     <div class="button-grid">
@@ -509,7 +516,9 @@
             currentAnswer: null,
             operations: [],
             isDrawing: [false, false],
-            predictionTimers: [null, null]
+            predictionTimers: [null, null],
+            isSingleDigit: false,
+            timerInterval: null
         };
 
         // Configuration des canvas
@@ -587,6 +596,9 @@
 
         // Gestion du dessin
         function startDrawing(e, canvasIndex) {
+            // Ne pas permettre le dessin sur le canvas des dizaines si c'est un résultat à 1 chiffre
+            if (canvasIndex === 0 && gameState.isSingleDigit) return;
+            
             gameState.isDrawing[canvasIndex] = true;
             const rect = canvases[canvasIndex].getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -598,6 +610,7 @@
 
         function draw(e, canvasIndex) {
             if (!gameState.isDrawing[canvasIndex]) return;
+            if (canvasIndex === 0 && gameState.isSingleDigit) return;
             
             const rect = canvases[canvasIndex].getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -620,6 +633,8 @@
         }
 
         function handleTouch(e, canvasIndex) {
+            if (canvasIndex === 0 && gameState.isSingleDigit) return;
+            
             e.preventDefault();
             const touch = e.touches[0];
             const mouseEvent = new MouseEvent(
@@ -684,13 +699,23 @@
             canvases.forEach((canvas, index) => {
                 contexts[index].fillStyle = 'black';
                 contexts[index].fillRect(0, 0, canvas.width, canvas.height);
-                document.getElementById(`prediction${index + 1}`).textContent = '-';
                 
                 if (gameState.predictionTimers[index]) {
                     clearTimeout(gameState.predictionTimers[index]);
                     gameState.predictionTimers[index] = null;
                 }
             });
+            
+            // Réinitialiser les prédictions selon le type de résultat
+            if (gameState.isSingleDigit) {
+                document.getElementById('prediction1').textContent = '0';
+                document.getElementById('prediction1').style.opacity = '0.5';
+                document.getElementById('prediction2').textContent = '-';
+            } else {
+                document.getElementById('prediction1').textContent = '-';
+                document.getElementById('prediction1').style.opacity = '1';
+                document.getElementById('prediction2').textContent = '-';
+            }
             
             document.getElementById('resultFeedback').textContent = '';
             document.getElementById('resultFeedback').className = 'result-feedback';
@@ -755,32 +780,66 @@
             const pred1 = document.getElementById('prediction1').textContent;
             const pred2 = document.getElementById('prediction2').textContent;
             
-            if (pred1 === '-' || pred2 === '-') return;
-            
-            const userAnswer = parseInt(pred1) * 10 + parseInt(pred2);
-            const correctAnswer = gameState.operations[gameState.currentQuestion].result;
-            
-            const feedbackEl = document.getElementById('resultFeedback');
-            
-            if (userAnswer === correctAnswer) {
-                feedbackEl.textContent = '✓ Correct!';
-                feedbackEl.className = 'result-feedback correct';
-                gameState.correctAnswers++;
+            // Pour les résultats à 1 chiffre, on vérifie seulement le canvas de droite
+            if (gameState.isSingleDigit) {
+                if (pred2 === '-') return;
                 
-                setTimeout(() => {
-                    nextQuestion();
-                }, 1500);
-            } else {
-                feedbackEl.textContent = '✗ Incorrect';
-                feedbackEl.className = 'result-feedback incorrect';
+                const userAnswer = parseInt(pred2);
+                const correctAnswer = gameState.operations[gameState.currentQuestion].result;
                 
-                gameState.attempts--;
-                document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
+                const feedbackEl = document.getElementById('resultFeedback');
                 
-                if (gameState.attempts === 0) {
+                if (userAnswer === correctAnswer) {
+                    feedbackEl.textContent = '✓ Correct!';
+                    feedbackEl.className = 'result-feedback correct';
+                    gameState.correctAnswers++;
+                    
                     setTimeout(() => {
-                        skipQuestion();
-                    }, 2000);
+                        nextQuestion();
+                    }, 1500);
+                } else {
+                    feedbackEl.textContent = '✗ Incorrect';
+                    feedbackEl.className = 'result-feedback incorrect';
+                    
+                    gameState.attempts--;
+                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
+                    
+                    if (gameState.attempts === 0) {
+                        setTimeout(() => {
+                            skipQuestion();
+                        }, 2000);
+                    }
+                }
+            } else {
+                // Pour les résultats à 2 chiffres, on vérifie les deux canvas
+                if (pred1 === '-' || pred2 === '-') return;
+                if (pred1 === '0' && gameState.isSingleDigit) return; // Éviter la vérification prématurée
+                
+                const userAnswer = parseInt(pred1) * 10 + parseInt(pred2);
+                const correctAnswer = gameState.operations[gameState.currentQuestion].result;
+                
+                const feedbackEl = document.getElementById('resultFeedback');
+                
+                if (userAnswer === correctAnswer) {
+                    feedbackEl.textContent = '✓ Correct!';
+                    feedbackEl.className = 'result-feedback correct';
+                    gameState.correctAnswers++;
+                    
+                    setTimeout(() => {
+                        nextQuestion();
+                    }, 1500);
+                } else {
+                    feedbackEl.textContent = '✗ Incorrect';
+                    feedbackEl.className = 'result-feedback incorrect';
+                    
+                    gameState.attempts--;
+                    document.getElementById('attempts').textContent = `Attempts left: ${gameState.attempts}`;
+                    
+                    if (gameState.attempts === 0) {
+                        setTimeout(() => {
+                            skipQuestion();
+                        }, 2000);
+                    }
                 }
             }
         }
@@ -809,6 +868,18 @@
             document.getElementById('operation').textContent = `${question.a} ${question.op} ${question.b} = ?`;
             document.getElementById('questionCounter').textContent = 
                 `Question ${gameState.currentQuestion + 1}/${gameState.totalQuestions}`;
+            
+            // Déterminer si le résultat est à 1 chiffre
+            gameState.isSingleDigit = question.result < 10;
+            
+            // Mettre à jour l'apparence des canvas
+            const canvas1 = document.getElementById('canvas1');
+            
+            if (gameState.isSingleDigit) {
+                canvas1.classList.add('disabled');
+            } else {
+                canvas1.classList.remove('disabled');
+            }
         }
 
         // Gestion du temps
@@ -882,10 +953,19 @@
             clearCanvases();
             
             // Démarrer le timer
-            setInterval(updateTimer, 1000);
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            gameState.timerInterval = setInterval(updateTimer, 1000);
         }
 
         function endGame() {
+            // Arrêter le timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+
             const totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
             const penalty = gameState.skippedQuestions * 5;
             const finalTime = totalTime + penalty;
@@ -911,6 +991,10 @@
 
         function quitGame() {
             if (confirm('Are you sure you want to quit the game?')) {
+                if (gameState.timerInterval) {
+                    clearInterval(gameState.timerInterval);
+                    gameState.timerInterval = null;
+                }
                 goHome();
             }
         }
@@ -929,17 +1013,28 @@
             try {
                 console.log('Loading MNIST model...');
                 document.getElementById('status').style.display = 'block';
-                model = await loadMNISTModel();
+                
+                // Vérifier si la fonction loadMNISTModel existe
+                if (typeof loadMNISTModel === 'function') {
+                    model = await loadMNISTModel();
+                    console.log('Model loaded successfully');
+                } else {
+                    throw new Error('loadMNISTModel function not found. Please include mnist_model.js');
+                }
                 
                 document.getElementById('status').style.display = 'none';
-                document.getElementById('setupArea').style.display = 'block';
-                
-                console.log('Model loaded successfully');
                 
             } catch (error) {
                 console.error('Error loading model:', error);
                 document.getElementById('status').innerHTML = `Error: ${error.message}`;
                 document.getElementById('status').style.display = 'block';
+                
+                // Désactiver les boutons si le modèle ne peut pas être chargé
+                document.getElementById('startBtn').disabled = true;
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                });
             }
         }
 
