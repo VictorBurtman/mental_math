@@ -135,7 +135,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             background: #2a2a2a;
             padding: 16px;
             border-radius: 12px;
@@ -155,12 +155,13 @@
             border-radius: 8px;
             font-size: 0.9em;
             cursor: pointer;
+            order: -1;
         }
 
         .operation {
-            font-size: 3em;
+            font-size: 2.8em;
             font-weight: 700;
-            margin: 20px 0;
+            margin: 16px 0;
             text-align: center;
             color: #fff;
             min-height: 60px;
@@ -173,7 +174,7 @@
             display: flex;
             justify-content: center;
             gap: 20px;
-            margin: 30px 0 20px 0;
+            margin: 20px 0;
         }
 
         .canvas-container {
@@ -195,8 +196,8 @@
             background: #000;
             cursor: crosshair;
             width: 100%;
-            max-width: 160px;
-            height: 160px;
+            max-width: 180px;
+            height: 180px;
         }
 
         .digit-canvas.disabled {
@@ -208,32 +209,39 @@
 
         .prediction-display {
             margin-top: 8px;
-            font-size: 2em;
+            font-size: 2.2em;
             font-weight: 700;
             color: #0066cc;
-            min-height: 40px;
+            min-height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        .attempts {
+            font-size: 1.1em;
+            margin: 16px 0;
+            color: #dc3545;
+            text-align: center;
+            font-weight: 500;
+        }
+
         .game-controls {
             display: flex;
-            gap: 12px;
-            margin: 20px 0;
+            justify-content: center;
+            margin: 16px 0;
         }
 
         .btn {
             background: #2a2a2a;
             border: 1px solid #444;
             color: white;
-            padding: 14px 20px;
+            padding: 14px 30px;
             border-radius: 12px;
             font-size: 1em;
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: 500;
-            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -264,7 +272,7 @@
         .result-feedback {
             font-size: 1.4em;
             font-weight: 600;
-            margin: 15px 0;
+            margin: 16px 0;
             padding: 12px;
             border-radius: 12px;
             min-height: 50px;
@@ -284,14 +292,6 @@
             background: #3d1a1a;
             border: 2px solid #dc3545;
             color: #dc3545;
-        }
-
-        .attempts {
-            font-size: 1em;
-            margin: 15px 0;
-            color: #dc3545;
-            text-align: center;
-            font-weight: 500;
         }
 
         .final-screen {
@@ -445,9 +445,9 @@
         <!-- Game Screen -->
         <div id="gameScreen" class="screen">
             <div class="game-header">
+                <button class="quit-btn" onclick="quitGame()">Quit</button>
                 <div class="question-counter" id="questionCounter">Question 1/20</div>
                 <div class="timer" id="timer">00:00</div>
-                <button class="quit-btn" onclick="quitGame()">Quit</button>
             </div>
 
             <div class="operation" id="operation">3 + 5 = ?</div>
@@ -455,24 +455,23 @@
             <div class="drawing-area">
                 <div class="canvas-container">
                     <label>Tens</label>
-                    <canvas class="digit-canvas" id="canvas1" width="120" height="120"></canvas>
+                    <canvas class="digit-canvas" id="canvas1" width="180" height="180"></canvas>
                     <div class="prediction-display" id="prediction1">-</div>
                 </div>
                 <div class="canvas-container">
                     <label>Units</label>
-                    <canvas class="digit-canvas" id="canvas2" width="120" height="120"></canvas>
+                    <canvas class="digit-canvas" id="canvas2" width="180" height="180"></canvas>
                     <div class="prediction-display" id="prediction2">-</div>
                 </div>
             </div>
 
+            <div class="attempts" id="attempts">Attempts left: 3</div>
+
             <div class="game-controls">
                 <button class="btn" onclick="clearCanvases()">🗑️ Clear</button>
-                <button class="btn" onclick="skipQuestion()">⏭️ Skip</button>
             </div>
 
             <div class="result-feedback" id="resultFeedback"></div>
-
-            <div class="attempts" id="attempts">Attempts left: 3</div>
 
             <div class="spacer"></div>
         </div>
@@ -493,8 +492,8 @@
                             <span class="stat-value" id="correctAnswers">15</span>
                         </div>
                         <div class="stat-item">
-                            <span>Skipped questions</span>
-                            <span class="stat-value" id="skippedQuestions">5</span>
+                            <span>Failed questions</span>
+                            <span class="stat-value" id="failedQuestions">5</span>
                         </div>
                         <div class="stat-item">
                             <span>Time penalty</span>
@@ -521,7 +520,7 @@
             totalQuestions: 20,
             currentQuestion: 0,
             correctAnswers: 0,
-            skippedQuestions: 0,
+            failedQuestions: 0,
             startTime: 0,
             attempts: 3,
             currentAnswer: null,
@@ -549,7 +548,7 @@
                 contexts[index].fillRect(0, 0, canvas.width, canvas.height);
                 contexts[index].lineCap = 'round';
                 contexts[index].lineJoin = 'round';
-                contexts[index].lineWidth = 8;
+                contexts[index].lineWidth = 12;
                 contexts[index].strokeStyle = 'white';
 
                 // Events souris
@@ -577,6 +576,7 @@
                 }
             });
             
+            saveSettings();
             updateStartButton();
         }
 
@@ -591,7 +591,27 @@
                 }
             });
             
+            saveSettings();
             updateStartButton();
+        }
+
+        function saveSettings() {
+            if (gameSettings.questions && gameSettings.difficulty) {
+                localStorage.setItem('lastQuestions', gameSettings.questions.toString());
+                localStorage.setItem('lastDifficulty', gameSettings.difficulty);
+            }
+        }
+
+        function loadSettings() {
+            const lastQuestions = localStorage.getItem('lastQuestions');
+            const lastDifficulty = localStorage.getItem('lastDifficulty');
+            
+            if (lastQuestions) {
+                selectQuestions(parseInt(lastQuestions));
+            }
+            if (lastDifficulty) {
+                selectDifficulty(lastDifficulty);
+            }
         }
 
         function updateStartButton() {
@@ -632,7 +652,7 @@
             }
             gameState.predictionTimers[canvasIndex] = setTimeout(() => {
                 predictDigit(canvasIndex);
-            }, 1000);
+            }, 500); // Réduit à 0.5 secondes
         }
 
         function stopDrawing(canvasIndex) {
@@ -813,7 +833,7 @@
                     
                     setTimeout(() => {
                         nextQuestion();
-                    }, 1500);
+                    }, 800); // Réduit à 0.8 secondes
                 } else {
                     feedbackEl.textContent = '✗ Incorrect';
                     feedbackEl.className = 'result-feedback incorrect';
@@ -823,8 +843,8 @@
                     
                     if (gameState.attempts === 0) {
                         setTimeout(() => {
-                            skipQuestion();
-                        }, 2000);
+                            nextQuestionAfterFailure();
+                        }, 1500);
                     }
                 }
             } else {
@@ -842,7 +862,7 @@
                     
                     setTimeout(() => {
                         nextQuestion();
-                    }, 1500);
+                    }, 800); // Réduit à 0.8 secondes
                 } else {
                     feedbackEl.textContent = '✗ Incorrect';
                     feedbackEl.className = 'result-feedback incorrect';
@@ -852,8 +872,8 @@
                     
                     if (gameState.attempts === 0) {
                         setTimeout(() => {
-                            skipQuestion();
-                        }, 2000);
+                            nextQuestionAfterFailure();
+                        }, 1500);
                     }
                 }
             }
@@ -873,8 +893,8 @@
             document.getElementById('attempts').textContent = 'Attempts left: 3';
         }
 
-        function skipQuestion() {
-            gameState.skippedQuestions++;
+        function nextQuestionAfterFailure() {
+            gameState.failedQuestions++;
             nextQuestion();
         }
 
@@ -916,138 +936,4 @@
             return false;
         }
 
-        function loadBestTimes() {
-            const difficulties = ['easy', 'medium', 'hard'];
-            const questions = [20, 50, 100];
-            const container = document.getElementById('bestTimesGrid');
-            container.innerHTML = '';
-            
-            difficulties.forEach(diff => {
-                questions.forEach(q => {
-                    const bestTime = localStorage.getItem(`bestTime_${q}_${diff}`);
-                    if (bestTime) {
-                        const minutes = Math.floor(bestTime / 60);
-                        const seconds = bestTime % 60;
-                        const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                        
-                        const item = document.createElement('div');
-                        item.className = 'best-time-item';
-                        item.innerHTML = `
-                            <span>${q} questions (${diff})</span>
-                            <span class="best-time-value">${timeStr}</span>
-                        `;
-                        container.appendChild(item);
-                    }
-                });
-            });
-        }
-
-        function showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            document.getElementById(screenId).classList.add('active');
-        }
-
-        function startGame() {
-            gameState.totalQuestions = gameSettings.questions;
-            gameState.currentQuestion = 0;
-            gameState.correctAnswers = 0;
-            gameState.skippedQuestions = 0;
-            gameState.attempts = 3;
-            gameState.operations = generateOperations(gameSettings.questions, gameSettings.difficulty);
-            gameState.startTime = Date.now();
-            
-            showScreen('gameScreen');
-            displayQuestion();
-            clearCanvases();
-            
-            if (gameState.timerInterval) {
-                clearInterval(gameState.timerInterval);
-            }
-            gameState.timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        function endGame() {
-            if (gameState.timerInterval) {
-                clearInterval(gameState.timerInterval);
-                gameState.timerInterval = null;
-            }
-
-            const totalTime = Math.floor((Date.now() - gameState.startTime) / 1000);
-            const penalty = gameState.skippedQuestions * 5;
-            const finalTime = totalTime + penalty;
-            
-            const minutes = Math.floor(finalTime / 60);
-            const seconds = finalTime % 60;
-            document.getElementById('finalTime').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            document.getElementById('correctAnswers').textContent = gameState.correctAnswers;
-            document.getElementById('skippedQuestions').textContent = gameState.skippedQuestions;
-            document.getElementById('timePenalty').textContent = `${penalty}s`;
-            
-            const isNewRecord = saveBestTime(gameSettings.questions, gameSettings.difficulty, finalTime);
-            document.getElementById('finalBestTime').textContent = 
-                isNewRecord ? 'New record!' : '';
-            
-            loadBestTimes();
-            showScreen('finalScreen');
-        }
-
-        function quitGame() {
-            if (confirm('Are you sure you want to quit the game?')) {
-                if (gameState.timerInterval) {
-                    clearInterval(gameState.timerInterval);
-                    gameState.timerInterval = null;
-                }
-                goHome();
-            }
-        }
-
-        function goHome() {
-            loadBestTimes();
-            showScreen('homeScreen');
-        }
-
-        function restartGame() {
-            startGame();
-        }
-
-        async function loadModel() {
-            try {
-                console.log('Loading MNIST model...');
-                document.getElementById('status').style.display = 'block';
-                
-                if (typeof loadMNISTModel === 'function') {
-                    model = await loadMNISTModel();
-                    console.log('Model loaded successfully');
-                } else {
-                    throw new Error('loadMNISTModel function not found. Please include mnist_model.js');
-                }
-                
-                document.getElementById('status').style.display = 'none';
-                
-            } catch (error) {
-                console.error('Error loading model:', error);
-                document.getElementById('status').innerHTML = `Error: ${error.message}`;
-                document.getElementById('status').style.display = 'block';
-                
-                document.getElementById('startBtn').disabled = true;
-                document.querySelectorAll('.option-btn').forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                });
-            }
-        }
-
-        window.addEventListener('load', () => {
-            initCanvases();
-            loadModel();
-            loadBestTimes();
-        });
-
-        console.log('Mental Math application initialized');
-    </script>
-</body>
-</html>
+        function loa
