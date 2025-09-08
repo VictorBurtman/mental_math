@@ -732,20 +732,79 @@
             if (!model) return;
             try {
                 const canvas = canvases[canvasIndex];
+                
+                // Étape 1: Redimensionner vers 28x28
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = 28;
                 tempCanvas.height = 28;
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.drawImage(canvas, 0, 0, 28, 28);
 
+                // Étape 2: Obtenir les données de pixels
                 const imageData = tempCtx.getImageData(0, 0, 28, 28);
                 const pixels = imageData.data;
+                
+                // Étape 3: Convertir en niveaux de gris
                 const grayscale = [];
                 for (let i = 0; i < pixels.length; i += 4) {
-                    grayscale.push(pixels[i] / 255.0);
+                    grayscale.push(pixels[i]);
                 }
+                
+                // Étape 4: Trouver la bounding box du chiffre
+                let minX = 28, maxX = -1, minY = 28, maxY = -1;
+                for (let y = 0; y < 28; y++) {
+                    for (let x = 0; x < 28; x++) {
+                        const idx = y * 28 + x;
+                        if (grayscale[idx] > 30) { // Seuil pour détecter les pixels du chiffre
+                            minX = Math.min(minX, x);
+                            maxX = Math.max(maxX, x);
+                            minY = Math.min(minY, y);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                
+                // Étape 5: Si on trouve du contenu, centrer et redimensionner
+                let processedData = new Array(28 * 28).fill(0);
+                
+                if (maxX >= minX && maxY >= minY) {
+                    const width = maxX - minX + 1;
+                    const height = maxY - minY + 1;
+                    const size = Math.max(width, height);
+                    
+                    // Calculer le facteur de redimensionnement (max 20 pixels pour laisser de la marge)
+                    const scale = Math.min(20, size) / size;
+                    const newWidth = width * scale;
+                    const newHeight = height * scale;
+                    
+                    // Calculer la position centrée
+                    const startX = Math.round((28 - newWidth) / 2);
+                    const startY = Math.round((28 - newHeight) / 2);
+                    
+                    // Redimensionner et centrer
+                    for (let y = 0; y < newHeight; y++) {
+                        for (let x = 0; x < newWidth; x++) {
+                            const origX = minX + Math.round(x / scale);
+                            const origY = minY + Math.round(y / scale);
+                            if (origX >= 0 && origX < 28 && origY >= 0 && origY < 28) {
+                                const origIdx = origY * 28 + origX;
+                                const newIdx = (startY + y) * 28 + (startX + x);
+                                if (newIdx >= 0 && newIdx < 28 * 28) {
+                                    processedData[newIdx] = grayscale[origIdx];
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Si pas de contenu détecté, utiliser l'image originale
+                    processedData = [...grayscale];
+                }
+                
+                // Étape 6: Normaliser entre 0 et 1
+                const normalized = processedData.map(pixel => pixel / 255.0);
 
-                const inputTensor = tf.tensor4d(grayscale, [1, 28, 28, 1]);
+                // Étape 7: Prédiction
+                const inputTensor = tf.tensor4d(normalized, [1, 28, 28, 1]);
                 const prediction = model.predict(inputTensor);
                 const probabilities = await prediction.data();
                 const predictedDigit = probabilities.indexOf(Math.max(...probabilities));
